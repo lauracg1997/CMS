@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls \"c:\\\\Users\\\\lcorrales\\\\Downloads\\\\talentionhr-backend\\\\bootstrap\\\\\")",
+      "Read(//c/Users/lcorrales/Downloads/talentionhr-backend/**)",
+      "PowerShell(if \\(Test-Path \"C:\\\\Users\\\\lcorrales\\\\Downloads\\\\talentionhr-backend\\\\database\\\\database.sqlite\"\\) { \\(Get-Item \"C:\\\\Users\\\\lcorrales\\\\Downloads\\\\talentionhr-backend\\\\database\\\\database.sqlite\"\\).Length } else { \"File does not exist\" })",
+      "PowerShell($size = \\(Get-Item \"C:\\\\Users\\\\lcorrales\\\\Downloads\\\\talentionhr-backend\\\\database\\\\database.sqlite\"\\).Length; \"Database file size: $size bytes\")",
+      "Bash(php artisan *)",
+      "Bash(dir public\\\\storage)"
+    ]
+  }
+}
