@@ -109,7 +109,15 @@ export default function App() {
       </aside>
 
       {/* Main Content */}
-      <main id="main-content" className="flex-1 p-8 flex flex-col overflow-y-auto bg-slate-50 space-y-6">
+      <main
+        id="main-content"
+        className="flex-1 p-8 flex flex-col overflow-y-auto space-y-6"
+        style={{
+          backgroundColor: '#f8fafc',
+          backgroundImage: `radial-gradient(circle, rgba(148,163,184,0.18) 1.2px, transparent 1.2px)`,
+          backgroundSize: '22px 22px',
+        }}
+      >
         {activeView === 'Inicio' ? (
           <>
             <header className="flex justify-between items-center">

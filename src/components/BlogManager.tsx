@@ -1,5 +1,6 @@
 import { Search, Edit2, Trash2, Plus, Calendar, Image as ImageIcon, Link2, X } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
+import { Portal } from './Portal';
 
 const API_URL = '/api/posts';
 
@@ -178,20 +179,23 @@ export default function BlogManager() {
       </div>
 
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <Portal><div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-2xl shadow-xl w-full max-w-lg relative max-h-[90vh] overflow-y-auto">
             <button onClick={() => setIsModalOpen(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-700">
               <X className="w-5 h-5" />
             </button>
             <h3 className="font-semibold text-slate-950 mb-4">{editing ? 'Editar entrada' : 'Nueva entrada'}</h3>
             <div className="space-y-4">
-              <input
-                type="text"
-                placeholder="Título"
-                className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                value={form.title}
-                onChange={e => setForm({ ...form, title: e.target.value })}
-              />
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">Título</label>
+                <input
+                  type="text"
+                  placeholder="Título de la entrada"
+                  className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  value={form.title}
+                  onChange={e => setForm({ ...form, title: e.target.value })}
+                />
+              </div>
               <div>
                 <label className="block text-xs font-medium text-slate-700 mb-1">Estado</label>
                 <select
@@ -203,25 +207,31 @@ export default function BlogManager() {
                   <option value="Publicado">Publicado</option>
                 </select>
               </div>
-              <input
-                type="text"
-                placeholder="URL imagen de portada (opcional)"
-                className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                value={form.cover_image_url}
-                onChange={e => setForm({ ...form, cover_image_url: e.target.value })}
-              />
-              <div className="flex gap-2">
-                <button type="button" onClick={handleAddLink} className="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200" title="Insertar enlace">
-                  <Link2 className="w-4 h-4" />
-                </button>
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">URL imagen de portada <span className="font-normal text-slate-400">(opcional)</span></label>
+                <input
+                  type="text"
+                  placeholder="https://..."
+                  className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  value={form.cover_image_url}
+                  onChange={e => setForm({ ...form, cover_image_url: e.target.value })}
+                />
               </div>
-              <textarea
-                ref={contentRef}
-                placeholder="Contenido"
-                className="w-full p-2 border border-slate-200 rounded-lg text-sm h-40 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                value={form.content}
-                onChange={e => setForm({ ...form, content: e.target.value })}
-              />
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">Contenido</label>
+                <div className="flex gap-2 mb-1.5">
+                  <button type="button" onClick={handleAddLink} className="p-1.5 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 text-xs flex items-center gap-1" title="Insertar enlace">
+                    <Link2 className="w-3.5 h-3.5" /> Insertar enlace
+                  </button>
+                </div>
+                <textarea
+                  ref={contentRef}
+                  placeholder="Escribe el contenido de la entrada..."
+                  className="w-full p-2 border border-slate-200 rounded-lg text-sm h-40 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  value={form.content}
+                  onChange={e => setForm({ ...form, content: e.target.value })}
+                />
+              </div>
             </div>
 
             {isUrlModalOpen && (
@@ -243,7 +253,7 @@ export default function BlogManager() {
               </button>
             </div>
           </div>
-        </div>
+        </div></Portal>
       )}
     </section>
   );

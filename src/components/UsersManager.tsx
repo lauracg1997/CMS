@@ -1,5 +1,6 @@
 import { Search, Edit2, Trash2, UserPlus, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { Portal } from './Portal';
 
 const API_URL = '/api/users';
 
@@ -224,7 +225,7 @@ export default function UsersManager() {
       )}
 
       {isAddModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <Portal><div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-2xl shadow-xl w-full max-w-sm relative">
             <button onClick={() => setIsAddModalOpen(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-700">
               <X className="w-5 h-5" />
@@ -234,9 +235,10 @@ export default function UsersManager() {
             </h3>
             <div className="space-y-3 mb-4">
               <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">Nombre</label>
                 <input
                   type="text"
-                  placeholder="Nombre"
+                  placeholder="Nombre completo"
                   className={`w-full p-2 border rounded-lg text-sm ${errors.name ? 'border-red-400' : 'border-slate-200'}`}
                   value={form.name}
                   onChange={e => setForm({ ...form, name: e.target.value })}
@@ -244,9 +246,10 @@ export default function UsersManager() {
                 {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name}</p>}
               </div>
               <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">Correo electrónico</label>
                 <input
                   type="email"
-                  placeholder="Correo electrónico"
+                  placeholder="usuario@empresa.com"
                   className={`w-full p-2 border rounded-lg text-sm ${errors.email ? 'border-red-400' : 'border-slate-200'}`}
                   value={form.email}
                   onChange={e => setForm({ ...form, email: e.target.value })}
@@ -255,9 +258,10 @@ export default function UsersManager() {
               </div>
               {!editingUser && (
                 <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">Contraseña</label>
                   <input
                     type="password"
-                    placeholder="Contraseña (mín. 6 caracteres)"
+                    placeholder="Mínimo 6 caracteres"
                     className={`w-full p-2 border rounded-lg text-sm ${errors.password ? 'border-red-400' : 'border-slate-200'}`}
                     value={form.password}
                     onChange={e => setForm({ ...form, password: e.target.value })}
@@ -265,14 +269,17 @@ export default function UsersManager() {
                   {errors.password && <p className="text-xs text-red-500 mt-1">{errors.password}</p>}
                 </div>
               )}
-              <select
-                className="w-full p-2 border border-slate-200 rounded-lg text-sm"
-                value={form.role}
-                onChange={e => setForm({ ...form, role: e.target.value as 'Administrador' | 'Editor' })}
-              >
-                <option>Administrador</option>
-                <option>Editor</option>
-              </select>
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">Rol</label>
+                <select
+                  className="w-full p-2 border border-slate-200 rounded-lg text-sm bg-white text-slate-700"
+                  value={form.role}
+                  onChange={e => setForm({ ...form, role: e.target.value as 'Administrador' | 'Editor' })}
+                >
+                  <option>Administrador</option>
+                  <option>Editor</option>
+                </select>
+              </div>
             </div>
             <div className="flex gap-2">
               <button onClick={() => setIsAddModalOpen(false)} className="flex-1 py-2 bg-slate-100 text-slate-700 rounded-lg text-sm font-medium">Cancelar</button>
@@ -281,7 +288,7 @@ export default function UsersManager() {
               </button>
             </div>
           </div>
-        </div>
+        </div></Portal>
       )}
     </section>
   );

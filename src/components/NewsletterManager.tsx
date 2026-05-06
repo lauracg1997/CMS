@@ -1,5 +1,6 @@
 import { Search, Edit2, Trash2, Plus, Users, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { Portal } from './Portal';
 
 const API_URL = '/api/newsletters';
 
@@ -122,12 +123,15 @@ export default function NewsletterManager() {
       </div>
 
       {showForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <Portal><div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-2xl shadow-xl w-full max-w-sm relative">
             <button onClick={() => setShowForm(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-700"><X className="w-5 h-5" /></button>
             <h3 className="font-semibold text-slate-950 mb-4">{editing ? 'Editar lista' : 'Nueva lista'}</h3>
             <div className="space-y-3 mb-4">
-              <input type="text" placeholder="Nombre de la lista *" className="w-full p-2 border border-slate-200 rounded-lg text-sm" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">Nombre de la lista</label>
+                <input type="text" placeholder="Ej: Lista principal" className="w-full p-2 border border-slate-200 rounded-lg text-sm" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
+              </div>
               <div>
                 <label className="block text-xs font-medium text-slate-700 mb-1">Suscriptores</label>
                 <input type="number" min="0" className="w-full p-2 border border-slate-200 rounded-lg text-sm" value={form.subscribers} onChange={e => setForm({ ...form, subscribers: parseInt(e.target.value) || 0 })} />
@@ -144,7 +148,7 @@ export default function NewsletterManager() {
               </button>
             </div>
           </div>
-        </div>
+        </div></Portal>
       )}
     </>
   );

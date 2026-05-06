@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Plus, Search, MoreVertical, Video, X, Pencil, Copy, Check, FileText, MonitorPlay, Upload, Eye, Download, File, Table, Film, Image, Link, Tv } from 'lucide-react';
+import { Plus, Search, MoreVertical, X, Pencil, Copy, Check, FileText, MonitorPlay, Upload, Eye, Download, File, Tv, Film, Table2, Image, Link } from 'lucide-react';
+import { Portal } from './Portal';
 
 const API_URL = '/api/resources';
 
@@ -30,17 +31,36 @@ const emptyForm = {
 const emptyErrors = { name: '', description: '', url: '', webinar_date: '', upload: '' };
 
 const CATEGORY_ACCEPT: Record<string, string> = {
-  Demo:      '.zip,.mp4,.pdf,.jpg,.png',
-  Guía:      '.pdf,.docx,.txt',
-  Plantilla: '.pdf,.docx,.csv,.zip,.txt',
-  Webinar:   '.mp4,.pdf,.zip',
+  PDF:               '.pdf',
+  Documento:         '.doc,.docx,.txt,.odt,.rtf',
+  'Hoja de calculo': '.xls,.xlsx,.csv,.ods',
+  Presentacion:      '.ppt,.pptx,.odp',
+  Video:             '.mp4,.mov,.avi,.webm',
+  Webinar:           '.mp4,.mov,.avi,.webm,.pdf,.ppt,.pptx',
+  Imagen:            '.jpg,.jpeg,.png,.gif,.svg,.webp',
+  Enlace:            '',
 };
 
-const CATEGORIES: { value: Resource['category']; label: string; icon: React.ReactNode; color: string; selected: string }[] = [
-  { value: 'Demo',     label: 'Demo',      icon: <MonitorPlay className="w-5 h-5" />, color: 'border-gray-200 text-gray-500 hover:border-green-400 hover:text-green-600 hover:bg-green-50',   selected: 'border-green-500 bg-green-50 text-green-700' },
-  { value: 'Guía',     label: 'Guía',      icon: <BookOpen className="w-5 h-5" />,    color: 'border-gray-200 text-gray-500 hover:border-red-400 hover:text-red-600 hover:bg-red-50',         selected: 'border-red-500 bg-red-50 text-red-700' },
-  { value: 'Plantilla',label: 'Plantilla', icon: <FileText className="w-5 h-5" />,    color: 'border-gray-200 text-gray-500 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50',       selected: 'border-blue-500 bg-blue-50 text-blue-700' },
-  { value: 'Webinar',  label: 'Webinar',   icon: <Video className="w-5 h-5" />,       color: 'border-gray-200 text-gray-500 hover:border-purple-400 hover:text-purple-600 hover:bg-purple-50', selected: 'border-purple-500 bg-purple-50 text-purple-700' },
+const CATEGORY_META: Record<string, { iconBg: string; iconColor: string }> = {
+  PDF:               { iconBg: 'bg-red-100',    iconColor: 'text-red-600' },
+  Documento:         { iconBg: 'bg-blue-100',   iconColor: 'text-blue-600' },
+  'Hoja de calculo': { iconBg: 'bg-green-100',  iconColor: 'text-green-600' },
+  Presentacion:      { iconBg: 'bg-orange-100', iconColor: 'text-orange-600' },
+  Video:             { iconBg: 'bg-purple-100', iconColor: 'text-purple-600' },
+  Webinar:           { iconBg: 'bg-indigo-100', iconColor: 'text-indigo-600' },
+  Imagen:            { iconBg: 'bg-pink-100',   iconColor: 'text-pink-600' },
+  Enlace:            { iconBg: 'bg-slate-100',  iconColor: 'text-slate-600' },
+};
+
+const CATEGORIES: { value: Resource['category']; label: string; icon: React.ReactNode; activeBorder: string; activeBg: string; activeText: string }[] = [
+  { value: 'PDF',              label: 'PDF',            icon: <FileText className="w-5 h-5" />,    activeBorder: 'border-red-400',    activeBg: 'bg-red-50',    activeText: 'text-red-700' },
+  { value: 'Documento',        label: 'Documento',      icon: <File className="w-5 h-5" />,        activeBorder: 'border-blue-400',   activeBg: 'bg-blue-50',   activeText: 'text-blue-700' },
+  { value: 'Hoja de calculo',  label: 'Hoja de\ncálculo', icon: <Table2 className="w-5 h-5" />,   activeBorder: 'border-green-400',  activeBg: 'bg-green-50',  activeText: 'text-green-700' },
+  { value: 'Presentacion',     label: 'Presentación',   icon: <MonitorPlay className="w-5 h-5" />, activeBorder: 'border-orange-400', activeBg: 'bg-orange-50', activeText: 'text-orange-700' },
+  { value: 'Video',            label: 'Vídeo',          icon: <Film className="w-5 h-5" />,        activeBorder: 'border-purple-400', activeBg: 'bg-purple-50', activeText: 'text-purple-700' },
+  { value: 'Webinar',          label: 'Webinar',        icon: <Tv className="w-5 h-5" />,          activeBorder: 'border-indigo-400', activeBg: 'bg-indigo-50', activeText: 'text-indigo-700' },
+  { value: 'Imagen',           label: 'Imagen',         icon: <Image className="w-5 h-5" />,       activeBorder: 'border-pink-400',   activeBg: 'bg-pink-50',   activeText: 'text-pink-700' },
+  { value: 'Enlace',           label: 'Enlace',         icon: <Link className="w-5 h-5" />,        activeBorder: 'border-slate-400',  activeBg: 'bg-slate-50',  activeText: 'text-slate-700' },
 ];
 
 export default function ResourceManager() {
@@ -73,14 +93,13 @@ export default function ResourceManager() {
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        const msg = err.message || 'Error al subir el archivo.';
-        setErrors(prev => ({ ...prev, upload: msg }));
+        setErrors(prev => ({ ...prev, upload: err.message || 'Error al subir el archivo.' }));
         return;
       }
       const data = await res.json();
       setForm(prev => ({ ...prev, url: data.url, type: data.type || prev.type, size: data.size || prev.size }));
       setUploadedFile({ name: file.name, size: data.size });
-    } catch (e) {
+    } catch {
       setErrors(prev => ({ ...prev, upload: 'No se pudo conectar al servidor.' }));
     } finally {
       setUploading(false);
@@ -169,7 +188,6 @@ export default function ResourceManager() {
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify(body),
       });
-
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         setErrors({
@@ -182,7 +200,6 @@ export default function ResourceManager() {
         setSaveError(err.message || `Error ${res.status} al guardar el recurso.`);
         return;
       }
-
       setShowForm(false);
       fetchResources();
     } catch {
@@ -226,24 +243,36 @@ export default function ResourceManager() {
   }
 
   function getIcon(category: string) {
-    if (category === 'Guía') return <BookOpen className="w-5 h-5" />;
-    if (category === 'Webinar') return <Video className="w-5 h-5" />;
-    if (category === 'Demo') return <MonitorPlay className="w-5 h-5" />;
+    if (category === 'Documento')        return <File className="w-5 h-5" />;
+    if (category === 'Hoja de calculo')  return <Table2 className="w-5 h-5" />;
+    if (category === 'Presentacion')     return <MonitorPlay className="w-5 h-5" />;
+    if (category === 'Video')            return <Film className="w-5 h-5" />;
+    if (category === 'Webinar')          return <Tv className="w-5 h-5" />;
+    if (category === 'Imagen')           return <Image className="w-5 h-5" />;
+    if (category === 'Enlace')           return <Link className="w-5 h-5" />;
     return <FileText className="w-5 h-5" />;
   }
 
   function getIconColor(category: string) {
-    if (category === 'Guía') return 'bg-red-50 text-red-600';
-    if (category === 'Webinar') return 'bg-purple-50 text-purple-600';
-    if (category === 'Demo') return 'bg-green-50 text-green-600';
-    return 'bg-blue-50 text-blue-600';
+    if (category === 'Documento')        return 'bg-blue-50 text-blue-600';
+    if (category === 'Hoja de calculo')  return 'bg-green-50 text-green-600';
+    if (category === 'Presentacion')     return 'bg-orange-50 text-orange-600';
+    if (category === 'Video')            return 'bg-purple-50 text-purple-600';
+    if (category === 'Webinar')          return 'bg-indigo-50 text-indigo-600';
+    if (category === 'Imagen')           return 'bg-pink-50 text-pink-600';
+    if (category === 'Enlace')           return 'bg-slate-50 text-slate-600';
+    return 'bg-red-50 text-red-600';
   }
 
   function getCategoryBadge(category: string) {
-    if (category === 'Guía') return 'bg-red-50 text-red-700';
-    if (category === 'Webinar') return 'bg-purple-50 text-purple-700';
-    if (category === 'Demo') return 'bg-green-50 text-green-700';
-    return 'bg-blue-50 text-blue-700';
+    if (category === 'Documento')        return 'bg-blue-50 text-blue-700';
+    if (category === 'Hoja de calculo')  return 'bg-green-50 text-green-700';
+    if (category === 'Presentacion')     return 'bg-orange-50 text-orange-700';
+    if (category === 'Video')            return 'bg-purple-50 text-purple-700';
+    if (category === 'Webinar')          return 'bg-indigo-50 text-indigo-700';
+    if (category === 'Imagen')           return 'bg-pink-50 text-pink-700';
+    if (category === 'Enlace')           return 'bg-slate-50 text-slate-700';
+    return 'bg-red-50 text-red-700';
   }
 
   return (
@@ -368,184 +397,184 @@ export default function ResourceManager() {
       </div>
 
       {showForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6 relative max-h-[90vh] overflow-y-auto">
-            <button onClick={() => setShowForm(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-700">
-              <X className="w-5 h-5" />
-            </button>
-            <h3 className="text-base font-bold text-gray-900 mb-4">{editing ? 'Editar Recurso' : 'Nuevo Recurso'}</h3>
-            <form onSubmit={handleSubmit} className="space-y-4">
-
-              {/* Nombre */}
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Nombre</label>
-                <input
-                  value={form.name}
-                  onChange={e => setForm({ ...form, name: e.target.value })}
-                  className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 ${errors.name ? 'border-red-400' : 'border-gray-200'}`}
-                  placeholder="Ej: Guía SEO 2024"
-                />
-                {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name}</p>}
-              </div>
-
-              {/* Categoría — visual cards */}
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-2">Categoría</label>
-                <div className="grid grid-cols-4 gap-2">
-                  {CATEGORIES.map(cat => (
-                    <button
-                      key={cat.value}
-                      type="button"
-                      onClick={() => setForm({ ...form, category: cat.value })}
-                      className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 text-xs font-semibold transition-all ${form.category === cat.value ? cat.selected : cat.color}`}
-                    >
-                      {cat.icon}
-                      {cat.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Fecha webinar (condicional) */}
-              {form.category === 'Webinar' && (
+        <Portal>
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl"
+              style={{ background: 'radial-gradient(ellipse at 0% 0%, rgba(59,130,246,0.07) 0%, white 55%)' }}
+            >
+              <div className="sticky top-0 z-10 flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100"
+                style={{ background: 'radial-gradient(ellipse at 0% 0%, rgba(59,130,246,0.07) 0%, white 55%)' }}
+              >
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Fecha y hora del webinar</label>
-                  <input
-                    type="datetime-local"
-                    value={form.webinar_date}
-                    onChange={e => setForm({ ...form, webinar_date: e.target.value })}
-                    className={`w-full border rounded-lg px-3 py-2 text-sm bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 ${errors.webinar_date ? 'border-red-400' : 'border-gray-200'}`}
-                  />
-                  {errors.webinar_date && <p className="text-xs text-red-500 mt-1">{errors.webinar_date}</p>}
+                  <p className="text-[10px] font-semibold tracking-widest text-blue-400 uppercase mb-0.5">Recursos</p>
+                  <h3 className="text-lg font-bold text-gray-900">{editing ? 'Editar Recurso' : 'Nuevo Recurso'}</h3>
                 </div>
-              )}
-
-              {/* Descripción */}
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Descripción</label>
-                <textarea
-                  value={form.description}
-                  onChange={e => setForm({ ...form, description: e.target.value })}
-                  rows={2}
-                  className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 ${errors.description ? 'border-red-400' : 'border-gray-200'}`}
-                  placeholder="Descripción breve..."
-                />
-                {errors.description && <p className="text-xs text-red-500 mt-1">{errors.description}</p>}
-              </div>
-
-              {/* Tipo de archivo */}
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Tipo de archivo</label>
-                <select
-                  value={form.type}
-                  onChange={e => setForm({ ...form, type: e.target.value })}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                >
-                  <option value="">— Selecciona tipo —</option>
-                  <option value="pdf">PDF</option>
-                  <option value="docx">DOCX</option>
-                  <option value="jpg">JPG</option>
-                  <option value="png">PNG</option>
-                  <option value="zip">ZIP</option>
-                  <option value="csv">CSV</option>
-                  <option value="mp4">MP4</option>
-                  <option value="txt">TXT</option>
-                </select>
-              </div>
-
-              {/* Zona de subida de archivo */}
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">
-                  Archivo
-                  <span className="ml-1 text-gray-400 font-normal">({CATEGORY_ACCEPT[form.category]})</span>
-                </label>
-                <div
-                  onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-                  onDragLeave={() => setDragOver(false)}
-                  onDrop={(e) => { e.preventDefault(); setDragOver(false); const f = e.dataTransfer.files[0]; if (f) uploadFile(f); }}
-                  onClick={() => fileInputRef.current?.click()}
-                  className={`flex flex-col items-center justify-center gap-2 p-6 rounded-xl border-2 border-dashed cursor-pointer transition-all select-none ${
-                    dragOver
-                      ? 'border-blue-400 bg-blue-50'
-                      : errors.upload
-                        ? 'border-red-300 bg-red-50'
-                        : uploadedFile
-                          ? 'border-green-400 bg-green-50'
-                          : 'border-gray-200 bg-gray-50 hover:border-blue-300 hover:bg-blue-50/30'
-                  }`}
-                >
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    className="hidden"
-                    accept={CATEGORY_ACCEPT[form.category]}
-                    onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadFile(f); e.target.value = ''; }}
-                  />
-                  {uploading ? (
-                    <div className="flex flex-col items-center gap-2 text-blue-500">
-                      <div className="w-6 h-6 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
-                      <span className="text-xs">Subiendo...</span>
-                    </div>
-                  ) : uploadedFile ? (
-                    <div className="flex items-center gap-2 text-green-700">
-                      <Check className="w-5 h-5 flex-shrink-0" />
-                      <span className="text-xs font-medium truncate max-w-[220px]">{uploadedFile.name}</span>
-                      <span className="text-xs text-green-500 flex-shrink-0">({uploadedFile.size})</span>
-                    </div>
-                  ) : (
-                    <>
-                      <Upload className="w-7 h-7 text-gray-300" />
-                      <div className="text-center">
-                        <p className="text-xs font-medium text-gray-600">Arrastra aquí, haz clic o pega con Ctrl+V</p>
-                        <p className="text-xs text-gray-400 mt-0.5">Solo {CATEGORY_ACCEPT[form.category]} · máx. 50 MB</p>
-                      </div>
-                    </>
-                  )}
-                </div>
-                {errors.upload && <p className="text-xs text-red-500 mt-1">{errors.upload}</p>}
-              </div>
-
-              {/* URL (manual o auto-rellenada tras subir) */}
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">
-                  URL del recurso
-                  {uploadedFile && <span className="ml-1 text-green-600 font-normal text-[10px]">(rellenada automáticamente)</span>}
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    value={form.url}
-                    onChange={e => setForm({ ...form, url: e.target.value })}
-                    className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                    placeholder="https://... (o sube un archivo arriba)"
-                  />
-                  <button
-                    type="button"
-                    onClick={copyFormUrl}
-                    disabled={!form.url}
-                    className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
-                    title="Copiar URL"
-                  >
-                    {formUrlCopied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
-                    {formUrlCopied ? 'Copiado' : 'Copiar'}
-                  </button>
-                </div>
-              </div>
-
-              {saveError && (
-                <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-600">
-                  {saveError}
-                </div>
-              )}
-
-              <div className="flex gap-2 pt-2">
-                <button type="button" onClick={() => setShowForm(false)} className="flex-1 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50">Cancelar</button>
-                <button type="submit" disabled={saving || uploading} className="flex-1 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">
-                  {saving ? 'Guardando...' : 'Guardar'}
+                <button onClick={() => setShowForm(false)} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors">
+                  <X className="w-5 h-5" />
                 </button>
               </div>
-            </form>
+              <div className="px-6 pb-6 pt-5">
+                <form onSubmit={handleSubmit} className="space-y-4">
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Nombre</label>
+                    <input
+                      value={form.name}
+                      onChange={e => setForm({ ...form, name: e.target.value })}
+                      className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 ${errors.name ? 'border-red-400' : 'border-gray-200'}`}
+                      placeholder="Ej: Guía SEO 2024"
+                    />
+                    {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name}</p>}
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-3 uppercase tracking-wide">Tipo de recurso</label>
+                    <div className="grid grid-cols-4 gap-2.5">
+                      {CATEGORIES.map(cat => {
+                        const active = form.category === cat.value;
+                        const meta = CATEGORY_META[cat.value];
+                        return (
+                          <button
+                            key={cat.value}
+                            type="button"
+                            onClick={() => setForm({ ...form, category: cat.value })}
+                            className={`group flex flex-col items-center gap-2.5 py-4 px-2 rounded-2xl border-2 transition-all duration-200 ${
+                              active
+                                ? `${cat.activeBorder} ${cat.activeBg} ${cat.activeText} shadow-md`
+                                : 'border-gray-100 bg-white text-gray-400 shadow-sm hover:border-blue-200 hover:bg-blue-50/40 hover:text-blue-600 hover:shadow-md'
+                            }`}
+                          >
+                            <div className={`p-2.5 rounded-xl transition-colors ${active ? 'bg-white/70' : `${meta.iconBg} opacity-60 group-hover:opacity-100`}`}>
+                              <div className={active ? cat.activeText : `${meta.iconColor} opacity-80 group-hover:opacity-100`}>
+                                {cat.icon}
+                              </div>
+                            </div>
+                            <span className="text-[11px] font-semibold text-center leading-tight whitespace-pre-line">{cat.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {form.category === 'Webinar' && (
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Fecha y hora del webinar</label>
+                      <input
+                        type="datetime-local"
+                        value={form.webinar_date}
+                        onChange={e => setForm({ ...form, webinar_date: e.target.value })}
+                        className={`w-full border rounded-lg px-3 py-2 text-sm bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 ${errors.webinar_date ? 'border-red-400' : 'border-gray-200'}`}
+                      />
+                      {errors.webinar_date && <p className="text-xs text-red-500 mt-1">{errors.webinar_date}</p>}
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Descripción</label>
+                    <textarea
+                      value={form.description}
+                      onChange={e => setForm({ ...form, description: e.target.value })}
+                      rows={2}
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                      placeholder="Descripción breve..."
+                    />
+                  </div>
+
+                  {form.category !== 'Enlace' && (
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        Archivo
+                        <span className="ml-1 text-gray-400 font-normal">({CATEGORY_ACCEPT[form.category]})</span>
+                      </label>
+                      <div
+                        onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                        onDragLeave={() => setDragOver(false)}
+                        onDrop={(e) => { e.preventDefault(); setDragOver(false); const f = e.dataTransfer.files[0]; if (f) uploadFile(f); }}
+                        onClick={() => fileInputRef.current?.click()}
+                        className={`flex flex-col items-center justify-center gap-2 p-6 rounded-xl border-2 border-dashed cursor-pointer transition-all select-none ${
+                          dragOver
+                            ? 'border-blue-400 bg-blue-50'
+                            : errors.upload
+                              ? 'border-red-300 bg-red-50'
+                              : uploadedFile
+                                ? 'border-green-400 bg-green-50'
+                                : 'border-gray-200 bg-gray-50 hover:border-blue-300 hover:bg-blue-50/30'
+                        }`}
+                      >
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          className="hidden"
+                          accept={CATEGORY_ACCEPT[form.category]}
+                          onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadFile(f); e.target.value = ''; }}
+                        />
+                        {uploading ? (
+                          <div className="flex flex-col items-center gap-2 text-blue-500">
+                            <div className="w-6 h-6 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+                            <span className="text-xs">Subiendo...</span>
+                          </div>
+                        ) : uploadedFile ? (
+                          <div className="flex items-center gap-2 text-green-700">
+                            <Check className="w-5 h-5 flex-shrink-0" />
+                            <span className="text-xs font-medium truncate max-w-[220px]">{uploadedFile.name}</span>
+                            <span className="text-xs text-green-500 flex-shrink-0">({uploadedFile.size})</span>
+                          </div>
+                        ) : (
+                          <>
+                            <Upload className="w-7 h-7 text-gray-300" />
+                            <div className="text-center">
+                              <p className="text-xs font-medium text-gray-600">Arrastra aquí, haz clic o pega con Ctrl+V</p>
+                              <p className="text-xs text-gray-400 mt-0.5">Solo {CATEGORY_ACCEPT[form.category]} · máx. 50 MB</p>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                      {errors.upload && <p className="text-xs text-red-500 mt-1">{errors.upload}</p>}
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      {form.category === 'Enlace' ? 'URL del enlace' : 'URL del recurso'}
+                      {uploadedFile && <span className="ml-1 text-green-600 font-normal text-[10px]">(rellenada automáticamente)</span>}
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        value={form.url}
+                        onChange={e => setForm({ ...form, url: e.target.value })}
+                        className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                        placeholder={form.category === 'Enlace' ? 'https://...' : 'https://... (o sube un archivo arriba)'}
+                      />
+                      <button
+                        type="button"
+                        onClick={copyFormUrl}
+                        disabled={!form.url}
+                        className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                        title="Copiar URL"
+                      >
+                        {formUrlCopied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                        {formUrlCopied ? 'Copiado' : 'Copiar'}
+                      </button>
+                    </div>
+                  </div>
+
+                  {saveError && (
+                    <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-600">
+                      {saveError}
+                    </div>
+                  )}
+
+                  <div className="flex gap-3 pt-2">
+                    <button type="button" onClick={() => setShowForm(false)} className="flex-1 py-2.5 text-sm text-gray-500 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">Cancelar</button>
+                    <button type="submit" disabled={saving || uploading} className="flex-1 py-2.5 text-sm font-semibold bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-sm shadow-blue-200">
+                      {saving ? 'Guardando...' : 'Guardar'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
           </div>
-        </div>
+        </Portal>
       )}
     </section>
   );

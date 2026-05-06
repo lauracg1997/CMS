@@ -1,5 +1,6 @@
 import { Search, Edit2, Trash2, Plus, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { Portal } from './Portal';
 
 const API_URL = '/api/leads';
 
@@ -182,7 +183,7 @@ export default function LeadsManager() {
       </div>
 
       {showForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <Portal><div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-2xl shadow-xl w-full max-w-sm relative">
             <button onClick={() => setShowForm(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-700">
               <X className="w-5 h-5" />
@@ -190,21 +191,35 @@ export default function LeadsManager() {
             <h3 className="font-semibold text-slate-950 mb-4">{editing ? 'Editar Lead' : 'Nuevo Lead'}</h3>
             <div className="space-y-3 mb-4">
               <div>
-                <input type="text" placeholder="Nombre *" className={`w-full p-2 border rounded-lg text-sm ${errors.name ? 'border-red-400' : 'border-slate-200'}`} value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
+                <label className="block text-xs font-medium text-slate-700 mb-1">Nombre</label>
+                <input type="text" placeholder="Nombre completo" className={`w-full p-2 border rounded-lg text-sm ${errors.name ? 'border-red-400' : 'border-slate-200'}`} value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
                 {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name}</p>}
               </div>
               <div>
-                <input type="email" placeholder="Email *" className={`w-full p-2 border rounded-lg text-sm ${errors.email ? 'border-red-400' : 'border-slate-200'}`} value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
+                <label className="block text-xs font-medium text-slate-700 mb-1">Email</label>
+                <input type="email" placeholder="correo@empresa.com" className={`w-full p-2 border rounded-lg text-sm ${errors.email ? 'border-red-400' : 'border-slate-200'}`} value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
                 {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email}</p>}
               </div>
-              <input type="text" placeholder="Teléfono" className="w-full p-2 border border-slate-200 rounded-lg text-sm" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} />
-              <input type="text" placeholder="Empresa" className="w-full p-2 border border-slate-200 rounded-lg text-sm" value={form.company} onChange={e => setForm({ ...form, company: e.target.value })} />
-              <select value={form.status} onChange={e => setForm({ ...form, status: e.target.value as Lead['status'] })} className="w-full p-2 border border-slate-200 rounded-lg text-sm bg-white text-slate-700">
-                <option value="Nuevo">Nuevo</option>
-                <option value="Contactado">Contactado</option>
-                <option value="Convertido">Convertido</option>
-              </select>
-              <textarea placeholder="Notas (opcional)" className="w-full p-2 border border-slate-200 rounded-lg text-sm" rows={2} value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} />
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">Teléfono <span className="font-normal text-slate-400">(opcional)</span></label>
+                <input type="text" placeholder="+34 600 000 000" className="w-full p-2 border border-slate-200 rounded-lg text-sm" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">Empresa <span className="font-normal text-slate-400">(opcional)</span></label>
+                <input type="text" placeholder="Nombre de la empresa" className="w-full p-2 border border-slate-200 rounded-lg text-sm" value={form.company} onChange={e => setForm({ ...form, company: e.target.value })} />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">Estado</label>
+                <select value={form.status} onChange={e => setForm({ ...form, status: e.target.value as Lead['status'] })} className="w-full p-2 border border-slate-200 rounded-lg text-sm bg-white text-slate-700">
+                  <option value="Nuevo">Nuevo</option>
+                  <option value="Contactado">Contactado</option>
+                  <option value="Convertido">Convertido</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">Notas <span className="font-normal text-slate-400">(opcional)</span></label>
+                <textarea placeholder="Observaciones sobre el lead..." className="w-full p-2 border border-slate-200 rounded-lg text-sm" rows={2} value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} />
+              </div>
             </div>
             <div className="flex gap-2">
               <button onClick={() => setShowForm(false)} className="flex-1 py-2 bg-slate-100 text-slate-700 rounded-lg text-sm font-medium">Cancelar</button>
@@ -213,7 +228,7 @@ export default function LeadsManager() {
               </button>
             </div>
           </div>
-        </div>
+        </div></Portal>
       )}
     </section>
   );

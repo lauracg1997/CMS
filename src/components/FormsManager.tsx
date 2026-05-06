@@ -1,5 +1,6 @@
 import { Search, Eye, Trash2, MessageSquare, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { Portal } from './Portal';
 
 const API_URL = '/api/form-submissions';
 
@@ -112,18 +113,18 @@ export default function FormsManager() {
       </div>
 
       {openMessage && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <Portal><div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-2xl shadow-xl w-full max-w-sm relative">
             <button onClick={() => setOpenMessage(null)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-700"><X className="w-5 h-5" /></button>
             <h3 className="font-semibold text-slate-950 mb-2">Mensaje del cliente</h3>
             <p className="text-slate-600 text-sm mb-4">{openMessage}</p>
             <button onClick={() => setOpenMessage(null)} className="w-full py-2 bg-blue-600 text-white rounded-lg text-sm font-medium">Cerrar</button>
           </div>
-        </div>
+        </div></Portal>
       )}
 
       {viewDetail && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <Portal><div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-2xl shadow-xl w-full max-w-md relative">
             <button onClick={() => setViewDetail(null)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-700"><X className="w-5 h-5" /></button>
             <h3 className="font-semibold text-slate-950 mb-4">Detalle del envío</h3>
@@ -143,7 +144,7 @@ export default function FormsManager() {
             </dl>
             <button onClick={() => setViewDetail(null)} className="w-full mt-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium">Cerrar</button>
           </div>
-        </div>
+        </div></Portal>
       )}
     </section>
   );
