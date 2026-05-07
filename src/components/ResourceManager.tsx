@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Plus, Search, MoreVertical, X, Pencil, Copy, Check, FileText, MonitorPlay, Upload, Eye, Download, File, Tv, Film, Table2, Image, Link } from 'lucide-react';
+import { Plus, Search, MoreVertical, X, Pencil, Copy, Check, FileText, MonitorPlay, Upload, Eye, Download, Tv, BookOpen } from 'lucide-react';
 import { Portal } from './Portal';
 
 const API_URL = '/api/resources';
@@ -7,7 +7,7 @@ const API_URL = '/api/resources';
 type Resource = {
   id: number;
   name: string;
-  category: 'PDF' | 'Documento' | 'Hoja de calculo' | 'Presentacion' | 'Video' | 'Webinar' | 'Imagen' | 'Enlace';
+  category: 'Demo' | 'Webinar' | 'Guía' | 'Plantilla';
   description: string;
   type: string;
   size: string;
@@ -20,7 +20,7 @@ type Resource = {
 
 const emptyForm = {
   name: '',
-  category: 'PDF' as Resource['category'],
+  category: 'Guía' as Resource['category'],
   description: '',
   type: '',
   size: '',
@@ -30,37 +30,27 @@ const emptyForm = {
 
 const emptyErrors = { name: '', description: '', url: '', webinar_date: '', upload: '' };
 
+const BROAD = '.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.csv,.txt,.odt,.ods,.odp,.rtf,.mp4,.mov,.avi,.webm,.jpg,.jpeg,.png,.gif,.svg,.webp,.zip';
+
 const CATEGORY_ACCEPT: Record<string, string> = {
-  PDF:               '.pdf',
-  Documento:         '.doc,.docx,.txt,.odt,.rtf',
-  'Hoja de calculo': '.xls,.xlsx,.csv,.ods',
-  Presentacion:      '.ppt,.pptx,.odp',
-  Video:             '.mp4,.mov,.avi,.webm',
-  Webinar:           '.mp4,.mov,.avi,.webm,.pdf,.ppt,.pptx',
-  Imagen:            '.jpg,.jpeg,.png,.gif,.svg,.webp',
-  Enlace:            '',
+  Demo:      BROAD,
+  Webinar:   BROAD,
+  'Guía':    BROAD,
+  Plantilla: BROAD,
 };
 
 const CATEGORY_META: Record<string, { iconBg: string; iconColor: string }> = {
-  PDF:               { iconBg: 'bg-red-100',    iconColor: 'text-red-600' },
-  Documento:         { iconBg: 'bg-blue-100',   iconColor: 'text-blue-600' },
-  'Hoja de calculo': { iconBg: 'bg-green-100',  iconColor: 'text-green-600' },
-  Presentacion:      { iconBg: 'bg-orange-100', iconColor: 'text-orange-600' },
-  Video:             { iconBg: 'bg-purple-100', iconColor: 'text-purple-600' },
-  Webinar:           { iconBg: 'bg-indigo-100', iconColor: 'text-indigo-600' },
-  Imagen:            { iconBg: 'bg-pink-100',   iconColor: 'text-pink-600' },
-  Enlace:            { iconBg: 'bg-slate-100',  iconColor: 'text-slate-600' },
+  Demo:      { iconBg: 'bg-blue-100',   iconColor: 'text-blue-600' },
+  Webinar:   { iconBg: 'bg-indigo-100', iconColor: 'text-indigo-600' },
+  'Guía':    { iconBg: 'bg-green-100',  iconColor: 'text-green-600' },
+  Plantilla: { iconBg: 'bg-orange-100', iconColor: 'text-orange-600' },
 };
 
 const CATEGORIES: { value: Resource['category']; label: string; icon: React.ReactNode; activeBorder: string; activeBg: string; activeText: string }[] = [
-  { value: 'PDF',              label: 'PDF',            icon: <FileText className="w-5 h-5" />,    activeBorder: 'border-red-400',    activeBg: 'bg-red-50',    activeText: 'text-red-700' },
-  { value: 'Documento',        label: 'Documento',      icon: <File className="w-5 h-5" />,        activeBorder: 'border-blue-400',   activeBg: 'bg-blue-50',   activeText: 'text-blue-700' },
-  { value: 'Hoja de calculo',  label: 'Hoja de\ncálculo', icon: <Table2 className="w-5 h-5" />,   activeBorder: 'border-green-400',  activeBg: 'bg-green-50',  activeText: 'text-green-700' },
-  { value: 'Presentacion',     label: 'Presentación',   icon: <MonitorPlay className="w-5 h-5" />, activeBorder: 'border-orange-400', activeBg: 'bg-orange-50', activeText: 'text-orange-700' },
-  { value: 'Video',            label: 'Vídeo',          icon: <Film className="w-5 h-5" />,        activeBorder: 'border-purple-400', activeBg: 'bg-purple-50', activeText: 'text-purple-700' },
-  { value: 'Webinar',          label: 'Webinar',        icon: <Tv className="w-5 h-5" />,          activeBorder: 'border-indigo-400', activeBg: 'bg-indigo-50', activeText: 'text-indigo-700' },
-  { value: 'Imagen',           label: 'Imagen',         icon: <Image className="w-5 h-5" />,       activeBorder: 'border-pink-400',   activeBg: 'bg-pink-50',   activeText: 'text-pink-700' },
-  { value: 'Enlace',           label: 'Enlace',         icon: <Link className="w-5 h-5" />,        activeBorder: 'border-slate-400',  activeBg: 'bg-slate-50',  activeText: 'text-slate-700' },
+  { value: 'Demo',      label: 'Demo',      icon: <MonitorPlay className="w-5 h-5" />, activeBorder: 'border-blue-400',   activeBg: 'bg-blue-50',   activeText: 'text-blue-700' },
+  { value: 'Webinar',   label: 'Webinar',   icon: <Tv className="w-5 h-5" />,          activeBorder: 'border-indigo-400', activeBg: 'bg-indigo-50', activeText: 'text-indigo-700' },
+  { value: 'Guía',      label: 'Guía',      icon: <BookOpen className="w-5 h-5" />,    activeBorder: 'border-green-400',  activeBg: 'bg-green-50',  activeText: 'text-green-700' },
+  { value: 'Plantilla', label: 'Plantilla', icon: <FileText className="w-5 h-5" />,    activeBorder: 'border-orange-400', activeBg: 'bg-orange-50', activeText: 'text-orange-700' },
 ];
 
 export default function ResourceManager() {
@@ -136,11 +126,12 @@ export default function ResourceManager() {
   function validate() {
     const e = { name: '', description: '', url: '', webinar_date: '', upload: errors.upload };
     if (!form.name.trim()) e.name = 'El nombre es obligatorio.';
+    if (!form.url.trim()) e.url = 'El recurso necesita un archivo o URL.';
     if (form.category === 'Webinar' && !form.webinar_date) {
       e.webinar_date = 'Los webinars necesitan fecha y hora.';
     }
     setErrors(e);
-    return !e.name && !e.webinar_date;
+    return !e.name && !e.url && !e.webinar_date;
   }
 
   function openAdd() {
@@ -243,43 +234,31 @@ export default function ResourceManager() {
   }
 
   function getIcon(category: string) {
-    if (category === 'Documento')        return <File className="w-5 h-5" />;
-    if (category === 'Hoja de calculo')  return <Table2 className="w-5 h-5" />;
-    if (category === 'Presentacion')     return <MonitorPlay className="w-5 h-5" />;
-    if (category === 'Video')            return <Film className="w-5 h-5" />;
-    if (category === 'Webinar')          return <Tv className="w-5 h-5" />;
-    if (category === 'Imagen')           return <Image className="w-5 h-5" />;
-    if (category === 'Enlace')           return <Link className="w-5 h-5" />;
-    return <FileText className="w-5 h-5" />;
+    if (category === 'Webinar')   return <Tv className="w-5 h-5" />;
+    if (category === 'Guía')      return <BookOpen className="w-5 h-5" />;
+    if (category === 'Plantilla') return <FileText className="w-5 h-5" />;
+    return <MonitorPlay className="w-5 h-5" />;
   }
 
   function getIconColor(category: string) {
-    if (category === 'Documento')        return 'bg-blue-50 text-blue-600';
-    if (category === 'Hoja de calculo')  return 'bg-green-50 text-green-600';
-    if (category === 'Presentacion')     return 'bg-orange-50 text-orange-600';
-    if (category === 'Video')            return 'bg-purple-50 text-purple-600';
-    if (category === 'Webinar')          return 'bg-indigo-50 text-indigo-600';
-    if (category === 'Imagen')           return 'bg-pink-50 text-pink-600';
-    if (category === 'Enlace')           return 'bg-slate-50 text-slate-600';
-    return 'bg-red-50 text-red-600';
+    if (category === 'Webinar')   return 'bg-indigo-50 text-indigo-600';
+    if (category === 'Guía')      return 'bg-green-50 text-green-600';
+    if (category === 'Plantilla') return 'bg-orange-50 text-orange-600';
+    return 'bg-blue-50 text-blue-600';
   }
 
   function getCategoryBadge(category: string) {
-    if (category === 'Documento')        return 'bg-blue-50 text-blue-700';
-    if (category === 'Hoja de calculo')  return 'bg-green-50 text-green-700';
-    if (category === 'Presentacion')     return 'bg-orange-50 text-orange-700';
-    if (category === 'Video')            return 'bg-purple-50 text-purple-700';
-    if (category === 'Webinar')          return 'bg-indigo-50 text-indigo-700';
-    if (category === 'Imagen')           return 'bg-pink-50 text-pink-700';
-    if (category === 'Enlace')           return 'bg-slate-50 text-slate-700';
-    return 'bg-red-50 text-red-700';
+    if (category === 'Webinar')   return 'bg-indigo-50 text-indigo-700';
+    if (category === 'Guía')      return 'bg-green-50 text-green-700';
+    if (category === 'Plantilla') return 'bg-orange-50 text-orange-700';
+    return 'bg-blue-50 text-blue-700';
   }
 
   return (
     <section className="flex flex-col h-full bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
       <header className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
         <div>
-          <h2 className="text-lg font-bold text-gray-900">Gestión de Recursos</h2>
+          <h2 className="text-lg font-medium text-slate-950">Gestión de Recursos</h2>
           <p className="text-sm text-gray-500">Administra tus archivos descargables para la web.</p>
         </div>
         <button onClick={openAdd} className="flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition">
@@ -398,18 +377,11 @@ export default function ResourceManager() {
 
       {showForm && (
         <Portal>
-          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl"
-              style={{ background: 'radial-gradient(ellipse at 0% 0%, rgba(59,130,246,0.07) 0%, white 55%)' }}
-            >
-              <div className="sticky top-0 z-10 flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100"
-                style={{ background: 'radial-gradient(ellipse at 0% 0%, rgba(59,130,246,0.07) 0%, white 55%)' }}
-              >
-                <div>
-                  <p className="text-[10px] font-semibold tracking-widest text-blue-400 uppercase mb-0.5">Recursos</p>
-                  <h3 className="text-lg font-bold text-gray-900">{editing ? 'Editar Recurso' : 'Nuevo Recurso'}</h3>
-                </div>
-                <button onClick={() => setShowForm(false)} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors">
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl shadow-xl bg-white">
+              <div className="sticky top-0 z-10 flex items-center justify-between px-6 pt-6 pb-4 border-b border-slate-100 bg-white">
+                <h3 className="text-lg font-semibold text-slate-950">{editing ? 'Editar Recurso' : 'Nuevo Recurso'}</h3>
+                <button onClick={() => setShowForm(false)} className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors">
                   <X className="w-5 h-5" />
                 </button>
               </div>
@@ -470,7 +442,7 @@ export default function ResourceManager() {
                   )}
 
                   <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Descripción</label>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Descripción <span className="font-normal text-gray-400">(opcional)</span></label>
                     <textarea
                       value={form.description}
                       onChange={e => setForm({ ...form, description: e.target.value })}
@@ -480,70 +452,65 @@ export default function ResourceManager() {
                     />
                   </div>
 
-                  {form.category !== 'Enlace' && (
-                    <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-1">
-                        Archivo
-                        <span className="ml-1 text-gray-400 font-normal">({CATEGORY_ACCEPT[form.category]})</span>
-                      </label>
-                      <div
-                        onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-                        onDragLeave={() => setDragOver(false)}
-                        onDrop={(e) => { e.preventDefault(); setDragOver(false); const f = e.dataTransfer.files[0]; if (f) uploadFile(f); }}
-                        onClick={() => fileInputRef.current?.click()}
-                        className={`flex flex-col items-center justify-center gap-2 p-6 rounded-xl border-2 border-dashed cursor-pointer transition-all select-none ${
-                          dragOver
-                            ? 'border-blue-400 bg-blue-50'
-                            : errors.upload
-                              ? 'border-red-300 bg-red-50'
-                              : uploadedFile
-                                ? 'border-green-400 bg-green-50'
-                                : 'border-gray-200 bg-gray-50 hover:border-blue-300 hover:bg-blue-50/30'
-                        }`}
-                      >
-                        <input
-                          ref={fileInputRef}
-                          type="file"
-                          className="hidden"
-                          accept={CATEGORY_ACCEPT[form.category]}
-                          onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadFile(f); e.target.value = ''; }}
-                        />
-                        {uploading ? (
-                          <div className="flex flex-col items-center gap-2 text-blue-500">
-                            <div className="w-6 h-6 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
-                            <span className="text-xs">Subiendo...</span>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Archivo</label>
+                    <div
+                      onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                      onDragLeave={() => setDragOver(false)}
+                      onDrop={(e) => { e.preventDefault(); setDragOver(false); const f = e.dataTransfer.files[0]; if (f) uploadFile(f); }}
+                      onClick={() => fileInputRef.current?.click()}
+                      className={`flex flex-col items-center justify-center gap-2 p-6 rounded-xl border-2 border-dashed cursor-pointer transition-all select-none ${
+                        dragOver
+                          ? 'border-blue-400 bg-blue-50'
+                          : errors.upload
+                            ? 'border-red-300 bg-red-50'
+                            : uploadedFile
+                              ? 'border-green-400 bg-green-50'
+                              : 'border-gray-200 bg-gray-50 hover:border-blue-300 hover:bg-blue-50/30'
+                      }`}
+                    >
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        className="hidden"
+                        accept={CATEGORY_ACCEPT[form.category]}
+                        onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadFile(f); e.target.value = ''; }}
+                      />
+                      {uploading ? (
+                        <div className="flex flex-col items-center gap-2 text-blue-500">
+                          <div className="w-6 h-6 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+                          <span className="text-xs">Subiendo...</span>
+                        </div>
+                      ) : uploadedFile ? (
+                        <div className="flex items-center gap-2 text-green-700">
+                          <Check className="w-5 h-5 flex-shrink-0" />
+                          <span className="text-xs font-medium truncate max-w-[220px]">{uploadedFile.name}</span>
+                          <span className="text-xs text-green-500 flex-shrink-0">({uploadedFile.size})</span>
+                        </div>
+                      ) : (
+                        <>
+                          <Upload className="w-7 h-7 text-gray-300" />
+                          <div className="text-center">
+                            <p className="text-xs font-medium text-gray-600">Arrastra aquí, haz clic o pega con Ctrl+V</p>
+                            <p className="text-xs text-gray-400 mt-0.5">PDF, Word, Excel, PPT, vídeo, imagen… · máx. 50 MB</p>
                           </div>
-                        ) : uploadedFile ? (
-                          <div className="flex items-center gap-2 text-green-700">
-                            <Check className="w-5 h-5 flex-shrink-0" />
-                            <span className="text-xs font-medium truncate max-w-[220px]">{uploadedFile.name}</span>
-                            <span className="text-xs text-green-500 flex-shrink-0">({uploadedFile.size})</span>
-                          </div>
-                        ) : (
-                          <>
-                            <Upload className="w-7 h-7 text-gray-300" />
-                            <div className="text-center">
-                              <p className="text-xs font-medium text-gray-600">Arrastra aquí, haz clic o pega con Ctrl+V</p>
-                              <p className="text-xs text-gray-400 mt-0.5">Solo {CATEGORY_ACCEPT[form.category]} · máx. 50 MB</p>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                      {errors.upload && <p className="text-xs text-red-500 mt-1">{errors.upload}</p>}
+                        </>
+                      )}
                     </div>
-                  )}
+                    {errors.upload && <p className="text-xs text-red-500 mt-1">{errors.upload}</p>}
+                  </div>
 
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">
-                      {form.category === 'Enlace' ? 'URL del enlace' : 'URL del recurso'}
+                      URL del recurso
                       {uploadedFile && <span className="ml-1 text-green-600 font-normal text-[10px]">(rellenada automáticamente)</span>}
                     </label>
                     <div className="flex gap-2">
                       <input
                         value={form.url}
-                        onChange={e => setForm({ ...form, url: e.target.value })}
-                        className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                        placeholder={form.category === 'Enlace' ? 'https://...' : 'https://... (o sube un archivo arriba)'}
+                        onChange={e => { setForm({ ...form, url: e.target.value }); if (errors.url) setErrors(prev => ({ ...prev, url: '' })); }}
+                        className={`flex-1 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 ${errors.url ? 'border-red-400' : 'border-gray-200'}`}
+                        placeholder="https://... (o sube un archivo arriba)"
                       />
                       <button
                         type="button"
@@ -556,6 +523,7 @@ export default function ResourceManager() {
                         {formUrlCopied ? 'Copiado' : 'Copiar'}
                       </button>
                     </div>
+                    {errors.url && <p className="text-xs text-red-500 mt-1">{errors.url}</p>}
                   </div>
 
                   {saveError && (

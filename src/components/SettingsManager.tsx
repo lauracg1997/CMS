@@ -1,68 +1,99 @@
 
 import { Globe, Mail, Folder, Link2, Save, Key, Server, Hash, Webhook, CheckCircle2, Plus, Edit2, Trash2, ChevronLeft, Loader2, AlertCircle } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+
+const DEFAULT_WEB = {
+  url: 'https://talentionhr.es',
+  apiUrl: 'https://api.talentionhr.es/v1',
+  apiKey: '',
+  webhookSecret: '',
+  env: 'production'
+};
+
+const DEFAULT_RESOURCES = {
+  storageProvider: 'local',
+  bucketName: '',
+  cdnUrl: '',
+  maxUploadSize: '50',
+  allowedFormats: ['pdf', 'docx', 'jpg', 'png'],
+  addWatermark: false
+};
+
+const DEFAULT_URLS = {
+  defaultDomain: 'talentionhr.es',
+  blogSlug: 'blog/{slug}',
+  resourceSlug: 'recursos/{id}',
+  enableUtmTracking: false,
+  utmSourceDefault: 'app-talention'
+};
 
 export default function SettingsManager() {
   const [activeTab, setActiveTab] = useState<'web' | 'email' | 'resources' | 'urls'>('web');
   const [isSaving, setIsSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [saveError, setSaveError] = useState('');
 
-  const [webSettings, setWebSettings] = useState({
-    url: 'https://talentionhr.es',
-    apiUrl: 'https://api.talentionhr.es/v1',
-    apiKey: 'sk_live_51M...',
-    webhookSecret: 'whsec_9b2a...',
-    env: 'production'
-  });
-
-  const [emailAccounts, setEmailAccounts] = useState([
-    {
-      id: '1',
-      provider: 'sendgrid',
-      smtpHost: 'smtp.sendgrid.net',
-      smtpPort: '587',
-      smtpUser: 'apikey',
-      smtpPass: '**********',
-      fromName: 'Equipo TalentionHR',
-      fromEmail: 'hola@talentionhr.es',
-      status: 'connected'
-    }
-  ]);
+  const [webSettings, setWebSettings] = useState(DEFAULT_WEB);
+  const [emailAccounts, setEmailAccounts] = useState<any[]>([]);
   const [emailForm, setEmailForm] = useState<any>(null);
   const [isTestingEmail, setIsTestingEmail] = useState(false);
   const [testResult, setTestResult] = useState<'success' | 'error' | null>(null);
+  const [resourceSettings, setResourceSettings] = useState(DEFAULT_RESOURCES);
+  const [urlSettings, setUrlSettings] = useState(DEFAULT_URLS);
 
-  const [resourceSettings, setResourceSettings] = useState({
-    storageProvider: 's3',
-    bucketName: 'talention-assets-prod',
-    cdnUrl: 'https://cdn.talentionhr.es',
-    maxUploadSize: '50',
-    allowedFormats: ['pdf', 'docx', 'jpg', 'png', 'zip'],
-    addWatermark: false
-  });
+  useEffect(() => {
+    fetch('/api/settings')
+      .then(r => r.json())
+      .then(data => {
+        if (data.web_settings) {
+          try { setWebSettings(JSON.parse(data.web_settings)); } catch {}
+        }
+        if (data.email_accounts) {
+          try { setEmailAccounts(JSON.parse(data.email_accounts)); } catch {}
+        }
+        if (data.resource_settings) {
+          try { setResourceSettings(JSON.parse(data.resource_settings)); } catch {}
+        }
+        if (data.url_settings) {
+          try { setUrlSettings(JSON.parse(data.url_settings)); } catch {}
+        }
+      })
+      .catch(() => {});
+  }, []);
 
-  const [urlSettings, setUrlSettings] = useState({
-    defaultDomain: 'talentionhr.es',
-    blogSlug: 'blog/{slug}',
-    resourceSlug: 'recursos/{id}',
-    enableUtmTracking: true,
-    utmSourceDefault: 'app-talention'
-  });
-
-  const handleSave = () => {
+  const handleSave = async () => {
     setIsSaving(true);
     setShowSuccess(false);
-    setTimeout(() => {
-      setIsSaving(false);
+    setSaveError('');
+    try {
+      const res = await fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({
+          web_settings: JSON.stringify(webSettings),
+          email_accounts: JSON.stringify(emailAccounts),
+          resource_settings: JSON.stringify(resourceSettings),
+          url_settings: JSON.stringify(urlSettings),
+        }),
+      });
+      if (!res.ok) {
+        const d = await res.json();
+        setSaveError(d.message || 'Error al guardar.');
+        return;
+      }
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
-    }, 800);
+    } catch {
+      setSaveError('No se pudo conectar al servidor.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const startNewEmail = () => {
     setEmailForm({
       id: Date.now().toString(),
-      provider: 'sendgrid',
+      provider: 'smtp',
       smtpHost: '',
       smtpPort: '587',
       smtpUser: '',
@@ -77,9 +108,7 @@ export default function SettingsManager() {
   const applyEmailForm = () => {
     setEmailAccounts(prev => {
       const exists = prev.find(a => a.id === emailForm.id);
-      if (exists) {
-        return prev.map(a => a.id === emailForm.id ? emailForm : a);
-      }
+      if (exists) return prev.map(a => a.id === emailForm.id ? emailForm : a);
       return [...prev, emailForm];
     });
     setEmailForm(null);
@@ -90,7 +119,7 @@ export default function SettingsManager() {
     setTestResult(null);
     setTimeout(() => {
       setIsTestingEmail(false);
-      const isSuccess = emailForm.smtpHost && emailForm.smtpUser && emailForm.smtpPass;
+      const isSuccess = !!(emailForm.smtpHost && emailForm.smtpUser && emailForm.smtpPass);
       setTestResult(isSuccess ? 'success' : 'error');
       setEmailForm({ ...emailForm, status: isSuccess ? 'connected' : 'error' });
     }, 1500);
@@ -100,12 +129,13 @@ export default function SettingsManager() {
     <section id="settings-manager" className="flex flex-col h-full bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
       <header className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
         <div>
-          <h2 className="text-lg font-semibold text-slate-950">Configuración del Sistema</h2>
+          <h2 className="text-lg font-medium text-slate-950">Configuración del Sistema</h2>
           <p className="text-sm text-slate-500">Gestión de integraciones, envíos, almacenamiento y enrutamiento.</p>
         </div>
         <div className="flex items-center gap-3">
+          {saveError && <span className="flex items-center text-sm text-red-600 font-medium"><AlertCircle className="w-4 h-4 mr-1"/> {saveError}</span>}
           {showSuccess && <span className="flex items-center text-sm text-green-600 font-medium"><CheckCircle2 className="w-4 h-4 mr-1"/> Guardado</span>}
-          <button 
+          <button
             onClick={handleSave}
             disabled={isSaving}
             className={`flex items-center px-4 py-2 text-white text-sm font-semibold rounded-lg transition ${isSaving ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}
@@ -115,40 +145,38 @@ export default function SettingsManager() {
           </button>
         </div>
       </header>
-      
+
       <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar Menu */}
         <div className="w-64 border-r border-slate-100 p-4 space-y-1 bg-slate-50/30 overflow-y-auto">
-          <button 
-            onClick={() => setActiveTab('web')} 
+          <button
+            onClick={() => setActiveTab('web')}
             className={`w-full flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition ${activeTab === 'web' ? 'bg-white shadow-sm text-blue-600 border border-slate-200' : 'text-slate-600 hover:bg-slate-100 border border-transparent'}`}
           >
             <Globe className="w-4 h-4 mr-3" /> Conexión Web
           </button>
-          <button 
-            onClick={() => setActiveTab('email')} 
+          <button
+            onClick={() => setActiveTab('email')}
             className={`w-full flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition ${activeTab === 'email' ? 'bg-white shadow-sm text-blue-600 border border-slate-200' : 'text-slate-600 hover:bg-slate-100 border border-transparent'}`}
           >
             <Mail className="w-4 h-4 mr-3" /> Email Marketing
           </button>
-          <button 
-            onClick={() => setActiveTab('resources')} 
+          <button
+            onClick={() => setActiveTab('resources')}
             className={`w-full flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition ${activeTab === 'resources' ? 'bg-white shadow-sm text-blue-600 border border-slate-200' : 'text-slate-600 hover:bg-slate-100 border border-transparent'}`}
           >
             <Folder className="w-4 h-4 mr-3" /> Archivos y Recursos
           </button>
-          <button 
-            onClick={() => setActiveTab('urls')} 
+          <button
+            onClick={() => setActiveTab('urls')}
             className={`w-full flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition ${activeTab === 'urls' ? 'bg-white shadow-sm text-blue-600 border border-slate-200' : 'text-slate-600 hover:bg-slate-100 border border-transparent'}`}
           >
             <Link2 className="w-4 h-4 mr-3" /> Enlaces y URLs
           </button>
         </div>
 
-        {/* Content Area */}
         <div className="flex-1 p-8 overflow-y-auto bg-slate-50">
           <div className="max-w-2xl">
-            
+
             {/* WEB SETTINGS */}
             {activeTab === 'web' && (
               <div className="space-y-6 animate-in fade-in duration-300">
@@ -156,7 +184,7 @@ export default function SettingsManager() {
                   <h3 className="text-base font-semibold text-slate-950">Entorno Web</h3>
                   <p className="text-sm text-slate-500 mb-4">Configura los parámetros principales de tu sitio web para sincronización.</p>
                 </div>
-                
+
                 <div className="space-y-4 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
@@ -189,14 +217,14 @@ export default function SettingsManager() {
                     <label className="block text-xs font-semibold text-slate-700 mb-1">API Key Principal</label>
                     <div className="flex">
                       <span className="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-slate-200 bg-slate-50 text-slate-500 sm:text-sm"><Key className="w-4 h-4"/></span>
-                      <input type="password" className="flex-1 w-full p-2 border border-slate-200 rounded-r-lg text-sm font-mono focus:ring-2 focus:ring-blue-100 outline-none" value={webSettings.apiKey} onChange={e => setWebSettings({...webSettings, apiKey: e.target.value})} />
+                      <input type="password" placeholder="sk_live_..." className="flex-1 w-full p-2 border border-slate-200 rounded-r-lg text-sm font-mono focus:ring-2 focus:ring-blue-100 outline-none" value={webSettings.apiKey} onChange={e => setWebSettings({...webSettings, apiKey: e.target.value})} />
                     </div>
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 mb-1">Webhook Secret</label>
                     <div className="flex">
                       <span className="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-slate-200 bg-slate-50 text-slate-500 sm:text-sm"><Webhook className="w-4 h-4"/></span>
-                      <input type="password" className="flex-1 w-full p-2 border border-slate-200 rounded-r-lg text-sm font-mono focus:ring-2 focus:ring-blue-100 outline-none" value={webSettings.webhookSecret} onChange={e => setWebSettings({...webSettings, webhookSecret: e.target.value})} />
+                      <input type="password" placeholder="whsec_..." className="flex-1 w-full p-2 border border-slate-200 rounded-r-lg text-sm font-mono focus:ring-2 focus:ring-blue-100 outline-none" value={webSettings.webhookSecret} onChange={e => setWebSettings({...webSettings, webhookSecret: e.target.value})} />
                     </div>
                   </div>
                 </div>
@@ -211,9 +239,9 @@ export default function SettingsManager() {
                     <div className="flex justify-between items-center mb-4">
                       <div>
                         <h3 className="text-base font-semibold text-slate-950">Cuentas de Correo Remitente</h3>
-                        <p className="text-sm text-slate-500">Configura los servidores SMTP para envíos de campañas y notificaciones.</p>
+                        <p className="text-sm text-slate-500">Configura servidores SMTP para envíos de campañas y notificaciones.</p>
                       </div>
-                      <button 
+                      <button
                         onClick={startNewEmail}
                         className="flex items-center px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded-lg hover:bg-slate-800 transition"
                       >
@@ -242,13 +270,13 @@ export default function SettingsManager() {
                             ) : (
                               <span className="flex items-center text-xs font-medium text-amber-600 bg-amber-50 px-2 py-1 rounded-full"><Loader2 className="w-3 h-3 mr-1 animate-spin"/> Pendiente</span>
                             )}
-                            <button 
+                            <button
                               onClick={() => { setEmailForm(account); setTestResult(null); }}
                               className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition"
                             >
                               <Edit2 className="w-4 h-4" />
                             </button>
-                            <button 
+                            <button
                               onClick={() => setEmailAccounts(emailAccounts.filter(a => a.id !== account.id))}
                               className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
                             >
@@ -261,7 +289,7 @@ export default function SettingsManager() {
                         <div className="p-8 text-center bg-slate-50 border border-slate-100 rounded-xl border-dashed">
                            <Mail className="w-8 h-8 text-slate-300 mx-auto mb-2" />
                            <p className="text-sm text-slate-500 font-medium">No hay cuentas configuradas</p>
-                           <p className="text-xs text-slate-400 mt-1">Añade tu primera cuenta de envío para empezar a enviar correos.</p>
+                           <p className="text-xs text-slate-400 mt-1">Añade tu primera cuenta de envío para empezar.</p>
                         </div>
                       )}
                     </div>
@@ -269,7 +297,7 @@ export default function SettingsManager() {
                 ) : (
                   <>
                     <div className="flex items-center mb-6">
-                      <button 
+                      <button
                         onClick={() => setEmailForm(null)}
                         className="mr-3 p-1.5 text-slate-500 hover:bg-slate-200 rounded-lg transition"
                       >
@@ -280,7 +308,7 @@ export default function SettingsManager() {
                         <p className="text-sm text-slate-500">Introduce los credenciales de tu proveedor de correo.</p>
                       </div>
                     </div>
-                    
+
                     <div className="space-y-4 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                       <div className="grid grid-cols-4 gap-4">
                         <div className="col-span-3">
@@ -320,7 +348,7 @@ export default function SettingsManager() {
 
                     <div className="mt-6 flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <button 
+                        <button
                           onClick={testEmailConnection}
                           disabled={isTestingEmail || !emailForm.smtpHost}
                           className="flex items-center px-4 py-2 border border-slate-200 bg-white text-slate-700 text-sm font-semibold rounded-lg hover:bg-slate-50 transition disabled:opacity-50"
@@ -328,7 +356,7 @@ export default function SettingsManager() {
                           {isTestingEmail ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Server className="w-4 h-4 mr-2" />}
                           {isTestingEmail ? 'Probando...' : 'Probar Conexión'}
                         </button>
-                        
+
                         {testResult === 'success' && (
                           <span className="flex items-center text-sm font-medium text-green-600 bg-green-50 px-3 py-1.5 rounded-lg border border-green-100"><CheckCircle2 className="w-4 h-4 mr-1.5"/> Conexión exitosa</span>
                         )}
@@ -337,7 +365,7 @@ export default function SettingsManager() {
                         )}
                       </div>
 
-                      <button 
+                      <button
                         onClick={applyEmailForm}
                         className="flex items-center px-6 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition"
                       >
@@ -356,15 +384,15 @@ export default function SettingsManager() {
                   <h3 className="text-base font-semibold text-slate-950">Archivos y Recursos</h3>
                   <p className="text-sm text-slate-500 mb-4">Gestión de subida, almacenamiento y CDN para los recursos de la web.</p>
                 </div>
-                
+
                 <div className="space-y-4 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-semibold text-slate-700 mb-1">Proveedor de Almacenamiento</label>
                       <select className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-100 outline-none" value={resourceSettings.storageProvider} onChange={e => setResourceSettings({...resourceSettings, storageProvider: e.target.value})}>
+                        <option value="local">Servidor Local</option>
                         <option value="s3">Amazon S3</option>
                         <option value="gcs">Google Cloud Storage</option>
-                        <option value="local">Servidor Local</option>
                       </select>
                     </div>
                     <div>
@@ -374,7 +402,7 @@ export default function SettingsManager() {
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 mb-1">URL Base del CDN</label>
-                    <input type="text" className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-100 outline-none" value={resourceSettings.cdnUrl} onChange={e => setResourceSettings({...resourceSettings, cdnUrl: e.target.value})} />
+                    <input type="text" placeholder="https://cdn.tudominio.com" className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-100 outline-none" value={resourceSettings.cdnUrl} onChange={e => setResourceSettings({...resourceSettings, cdnUrl: e.target.value})} />
                   </div>
                 </div>
 
@@ -383,18 +411,18 @@ export default function SettingsManager() {
                     <label className="block text-xs font-semibold text-slate-700 mb-1">Límite por Archivo (MB)</label>
                     <input type="number" className="w-48 p-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-100 outline-none" value={resourceSettings.maxUploadSize} onChange={e => setResourceSettings({...resourceSettings, maxUploadSize: e.target.value})} />
                   </div>
-                  
+
                   <div className="pt-4 border-t border-slate-100">
                     <label className="block text-xs font-semibold text-slate-700 mb-3">Formatos Permitidos</label>
                     <div className="flex flex-wrap gap-2 mb-4">
                       {['pdf', 'docx', 'jpg', 'png', 'zip', 'csv', 'mp4', 'txt'].map(format => (
                         <label key={format} className="flex items-center gap-2 px-3 py-2 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 transition">
-                          <input 
-                            type="checkbox" 
+                          <input
+                            type="checkbox"
                             className="rounded text-blue-600 focus:ring-blue-500 border-slate-300 w-4 h-4 cursor-pointer"
                             checked={resourceSettings.allowedFormats.includes(format)}
                             onChange={(e) => {
-                              const newFormats = e.target.checked 
+                              const newFormats = e.target.checked
                                 ? [...resourceSettings.allowedFormats, format]
                                 : resourceSettings.allowedFormats.filter(f => f !== format);
                               setResourceSettings({...resourceSettings, allowedFormats: newFormats});
@@ -405,7 +433,7 @@ export default function SettingsManager() {
                       ))}
                     </div>
                   </div>
-                  
+
                   <div className="pt-4 border-t border-slate-100">
                     <label className="flex items-center cursor-pointer w-fit">
                       <div className="relative">
@@ -420,14 +448,14 @@ export default function SettingsManager() {
               </div>
             )}
 
-             {/* URL SETTINGS */}
-             {activeTab === 'urls' && (
+            {/* URL SETTINGS */}
+            {activeTab === 'urls' && (
               <div className="space-y-6 animate-in fade-in duration-300">
                 <div>
                   <h3 className="text-base font-semibold text-slate-950">Estructura de URLs y Tracking</h3>
                   <p className="text-sm text-slate-500 mb-4">Define cómo se generan los enlaces públicos para contenidos y recursos.</p>
                 </div>
-                
+
                 <div className="space-y-4 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 mb-1">Dominio Público por Defecto</label>
@@ -456,11 +484,11 @@ export default function SettingsManager() {
                 <div className="space-y-4 bg-white p-6 rounded-xl border border-slate-200 shadow-sm mt-6">
                    <div className="flex items-center justify-between mb-2">
                       <label className="text-sm font-medium text-slate-700">Añadir etiquetas UTM automáticamente</label>
-                      <div className="relative">
+                      <label className="relative cursor-pointer">
                         <input type="checkbox" className="sr-only" checked={urlSettings.enableUtmTracking} onChange={e => setUrlSettings({...urlSettings, enableUtmTracking: e.target.checked})} />
-                        <div className={`block w-10 h-6 rounded-full transition cursor-pointer ${urlSettings.enableUtmTracking ? 'bg-blue-600' : 'bg-slate-200'}`}></div>
-                        <div className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition transform cursor-pointer pointer-events-none ${urlSettings.enableUtmTracking ? 'translate-x-4' : ''}`}></div>
-                      </div>
+                        <div className={`block w-10 h-6 rounded-full transition ${urlSettings.enableUtmTracking ? 'bg-blue-600' : 'bg-slate-200'}`}></div>
+                        <div className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition transform ${urlSettings.enableUtmTracking ? 'translate-x-4' : ''}`}></div>
+                      </label>
                   </div>
                   {urlSettings.enableUtmTracking && (
                     <div className="pt-3 border-t border-slate-100">

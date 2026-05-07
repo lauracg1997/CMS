@@ -15,7 +15,7 @@ type Lead = {
 };
 
 const emptyForm = { name: '', email: '', phone: '', company: '', status: 'Nuevo' as Lead['status'], notes: '' };
-const emptyErrors = { name: '', email: '' };
+const emptyErrors = { name: '', email: '', phone: '' };
 
 const STATUS_COLORS: Record<string, string> = {
   Nuevo: 'bg-sky-50 text-sky-700',
@@ -48,11 +48,17 @@ export default function LeadsManager() {
   useEffect(() => { fetchLeads(); }, []);
 
   function validate() {
-    const e = { name: '', email: '' };
-    if (!form.name.trim()) e.name = 'El nombre es obligatorio.';
-    if (!form.email.trim()) e.email = 'El email es obligatorio.';
+    const e = { name: '', email: '', phone: '' };
+    if (!form.name.trim())
+      e.name = 'El nombre es obligatorio.';
+    if (!form.email.trim())
+      e.email = 'El email es obligatorio.';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim()))
+      e.email = 'El email no tiene un formato válido.';
+    if (form.phone.trim() && !/^[0-9\s\+\-\(\)]{6,20}$/.test(form.phone.trim()))
+      e.phone = 'El teléfono solo puede contener números, espacios y los símbolos + - ( ).';
     setErrors(e);
-    return !e.name && !e.email;
+    return !e.name && !e.email && !e.phone;
   }
 
   function openAdd() {
@@ -120,7 +126,7 @@ export default function LeadsManager() {
     <section id="leads-manager" className="flex flex-col h-full bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
       <header className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
         <div>
-          <h2 className="text-lg font-semibold text-slate-950">Leads</h2>
+          <h2 className="text-lg font-medium text-slate-950">Leads</h2>
           <p className="text-sm text-slate-500">Administra tus contactos y leads.</p>
         </div>
         <button onClick={openAdd} className="flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition">
@@ -202,7 +208,17 @@ export default function LeadsManager() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-700 mb-1">Teléfono <span className="font-normal text-slate-400">(opcional)</span></label>
-                <input type="text" placeholder="+34 600 000 000" className="w-full p-2 border border-slate-200 rounded-lg text-sm" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} />
+                <input
+                  type="text"
+                  placeholder="+34 600 000 000"
+                  className={`w-full p-2 border rounded-lg text-sm ${errors.phone ? 'border-red-400' : 'border-slate-200'}`}
+                  value={form.phone}
+                  onChange={e => {
+                    setForm({ ...form, phone: e.target.value });
+                    if (errors.phone) setErrors(prev => ({ ...prev, phone: '' }));
+                  }}
+                />
+                {errors.phone && <p className="text-xs text-red-500 mt-1">{errors.phone}</p>}
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-700 mb-1">Empresa <span className="font-normal text-slate-400">(opcional)</span></label>

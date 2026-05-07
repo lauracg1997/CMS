@@ -1,5 +1,5 @@
-import { Search, Edit2, Trash2, UserPlus, X } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { Search, Edit2, Trash2, UserPlus, X, Upload } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Portal } from './Portal';
 
 const API_URL = '/api/users';
@@ -9,10 +9,17 @@ type User = {
   name: string;
   email: string;
   role: 'Administrador' | 'Editor';
+  avatar_url: string | null;
 };
 
-const emptyForm = { name: '', email: '', password: '', role: 'Editor' as 'Administrador' | 'Editor' };
+const emptyForm = { name: '', email: '', password: '', role: 'Editor' as 'Administrador' | 'Editor', avatar_url: '' };
 const emptyErrors = { name: '', email: '', password: '' };
+
+function Initials({ name }: { name: string }) {
+  const parts = name.trim().split(' ');
+  const letters = parts.length >= 2 ? parts[0][0] + parts[1][0] : parts[0].slice(0, 2);
+  return <span className="text-xs font-semibold text-slate-500 uppercase">{letters}</span>;
+}
 
 export default function UsersManager() {
   const [activeTab, setActiveTab] = useState<'Usuarios' | 'Roles'>('Usuarios');
@@ -23,6 +30,8 @@ export default function UsersManager() {
   const [form, setForm] = useState(emptyForm);
   const [errors, setErrors] = useState(emptyErrors);
   const [saving, setSaving] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   async function fetchUsers() {
     try {
@@ -38,6 +47,26 @@ export default function UsersManager() {
   }
 
   useEffect(() => { fetchUsers(); }, []);
+
+  const uploadAvatar = useCallback(async (file: File) => {
+    setAvatarUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await fetch('/api/users/upload', {
+        method: 'POST',
+        headers: { 'Accept': 'application/json' },
+        body: fd,
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      setForm(prev => ({ ...prev, avatar_url: data.url }));
+    } catch {
+      console.error('Error al subir avatar');
+    } finally {
+      setAvatarUploading(false);
+    }
+  }, []);
 
   function validate() {
     const e = { name: '', email: '', password: '' };
@@ -63,7 +92,7 @@ export default function UsersManager() {
 
   function openEdit(user: User) {
     setEditingUser(user);
-    setForm({ name: user.name, email: user.email, password: '', role: user.role });
+    setForm({ name: user.name, email: user.email, password: '', role: user.role, avatar_url: user.avatar_url || '' });
     setErrors(emptyErrors);
     setIsAddModalOpen(true);
   }
@@ -77,13 +106,13 @@ export default function UsersManager() {
         res = await fetch(`${API_URL}/${editingUser.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-          body: JSON.stringify({ name: form.name, email: form.email, role: form.role }),
+          body: JSON.stringify({ name: form.name, email: form.email, role: form.role, avatar_url: form.avatar_url || null }),
         });
       } else {
         res = await fetch(API_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-          body: JSON.stringify(form),
+          body: JSON.stringify({ ...form, avatar_url: form.avatar_url || null }),
         });
       }
 
@@ -123,7 +152,7 @@ export default function UsersManager() {
     <section id="users-manager" className="flex flex-col h-full bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
       <header className="px-6 pt-6 border-b border-slate-100 flex justify-between items-end bg-slate-50/50">
         <div>
-          <h2 className="text-lg font-semibold text-slate-950">Gestión de Usuarios</h2>
+          <h2 className="text-lg font-medium text-slate-950">Gestión de Usuarios</h2>
           <div className="flex gap-4 mt-4">
             <button
               onClick={() => setActiveTab('Usuarios')}
@@ -172,7 +201,7 @@ export default function UsersManager() {
               <table className="w-full text-left text-sm border-collapse">
                 <thead className="text-slate-500 text-xs uppercase border-b border-slate-100 sticky top-0 bg-white">
                   <tr>
-                    <th className="px-6 py-4 font-semibold">Nombre</th>
+                    <th className="px-6 py-4 font-semibold">Usuario</th>
                     <th className="px-6 py-4 font-semibold">Email</th>
                     <th className="px-6 py-4 font-semibold">Rol</th>
                     <th className="px-6 py-4 font-semibold text-right">Acciones</th>
@@ -181,7 +210,17 @@ export default function UsersManager() {
                 <tbody className="divide-y divide-slate-100">
                   {users.map((u) => (
                     <tr key={u.id} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="px-6 py-4 text-slate-950 font-semibold">{u.name}</td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden flex-shrink-0">
+                            {u.avatar_url
+                              ? <img src={u.avatar_url} alt={u.name} className="w-full h-full object-cover" />
+                              : <Initials name={u.name} />
+                            }
+                          </div>
+                          <span className="font-semibold text-slate-950">{u.name}</span>
+                        </div>
+                      </td>
                       <td className="px-6 py-4 text-slate-600">{u.email}</td>
                       <td className="px-6 py-4">
                         <span className={`px-2.5 py-1 rounded-full text-[11px] font-semibold ${u.role === 'Administrador' ? 'bg-blue-50 text-blue-700' : 'bg-slate-100 text-slate-600'}`}>
@@ -226,13 +265,56 @@ export default function UsersManager() {
 
       {isAddModalOpen && (
         <Portal><div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-2xl shadow-xl w-full max-w-sm relative">
+          <div className="bg-white p-6 rounded-2xl shadow-xl w-full max-w-sm relative max-h-[90vh] overflow-y-auto">
             <button onClick={() => setIsAddModalOpen(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-700">
               <X className="w-5 h-5" />
             </button>
             <h3 className="font-semibold text-slate-950 mb-4">
               {editingUser ? 'Editar usuario' : 'Añadir nuevo usuario'}
             </h3>
+
+            {/* Avatar upload */}
+            <div className="flex flex-col items-center mb-5">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={e => { const f = e.target.files?.[0]; if (f) uploadAvatar(f); e.target.value = ''; }}
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="relative group w-32 h-32 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden border-2 border-slate-200 hover:border-blue-400 transition"
+                title="Cambiar foto"
+              >
+                {avatarUploading ? (
+                  <div className="w-5 h-5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+                ) : form.avatar_url ? (
+                  <>
+                    <img src={form.avatar_url} alt="avatar" className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                      <Upload className="w-5 h-5 text-white" />
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex flex-col items-center gap-1 text-slate-400">
+                    <Upload className="w-5 h-5" />
+                    <span className="text-[10px]">Foto</span>
+                  </div>
+                )}
+              </button>
+              {form.avatar_url && (
+                <button
+                  type="button"
+                  onClick={() => setForm(prev => ({ ...prev, avatar_url: '' }))}
+                  className="mt-1.5 text-xs text-slate-400 hover:text-red-500 transition"
+                >
+                  Quitar foto
+                </button>
+              )}
+            </div>
+
             <div className="space-y-3 mb-4">
               <div>
                 <label className="block text-xs font-medium text-slate-700 mb-1">Nombre</label>

@@ -13,6 +13,7 @@ type Campaign = {
 };
 
 const emptyForm = { name: '', status: 'Borrador' as Campaign['status'], open_rate: '' };
+const emptyErrors = { name: '' };
 
 export default function EmailMarketingManager() {
   const [activeTab, setActiveTab] = useState<'Campaigns' | 'Newsletter'>('Campaigns');
@@ -21,6 +22,7 @@ export default function EmailMarketingManager() {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Campaign | null>(null);
   const [form, setForm] = useState(emptyForm);
+  const [errors, setErrors] = useState(emptyErrors);
   const [saving, setSaving] = useState(false);
 
   async function fetchCampaigns() {
@@ -38,20 +40,29 @@ export default function EmailMarketingManager() {
 
   useEffect(() => { fetchCampaigns(); }, []);
 
+  function validate() {
+    const e = { name: '' };
+    if (!form.name.trim()) e.name = 'El nombre de la campaña es obligatorio.';
+    setErrors(e);
+    return !e.name;
+  }
+
   function openAdd() {
     setEditing(null);
     setForm(emptyForm);
+    setErrors(emptyErrors);
     setShowForm(true);
   }
 
   function openEdit(c: Campaign) {
     setEditing(c);
     setForm({ name: c.name, status: c.status, open_rate: c.open_rate || '' });
+    setErrors(emptyErrors);
     setShowForm(true);
   }
 
   async function handleSave() {
-    if (!form.name.trim()) return;
+    if (!validate()) return;
     setSaving(true);
     try {
       const method = editing ? 'PUT' : 'POST';
@@ -92,7 +103,7 @@ export default function EmailMarketingManager() {
     <section id="email-marketing-manager" className="flex flex-col h-full bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
       <header className="px-6 pt-6 border-b border-slate-100 flex justify-between items-end bg-slate-50/50">
         <div>
-          <h2 className="text-lg font-semibold text-slate-950">Email & News</h2>
+          <h2 className="text-lg font-medium text-slate-950">Email & News</h2>
           <div className="flex gap-4 mt-4">
             <button onClick={() => setActiveTab('Campaigns')} className={`pb-3 text-sm font-semibold border-b-2 ${activeTab === 'Campaigns' ? 'text-blue-600 border-blue-600' : 'text-slate-500 border-transparent hover:text-slate-700'}`}>
               Campañas
@@ -162,7 +173,8 @@ export default function EmailMarketingManager() {
             <div className="space-y-3 mb-4">
               <div>
                 <label className="block text-xs font-medium text-slate-700 mb-1">Nombre de la campaña</label>
-                <input type="text" placeholder="Ej: Newsletter Mayo 2026" className="w-full p-2 border border-slate-200 rounded-lg text-sm" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
+                <input type="text" placeholder="Ej: Newsletter Mayo 2026" className={`w-full p-2 border rounded-lg text-sm ${errors.name ? 'border-red-400' : 'border-slate-200'}`} value={form.name} onChange={e => { setForm({ ...form, name: e.target.value }); if (errors.name) setErrors(prev => ({ ...prev, name: '' })); }} />
+                {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name}</p>}
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-700 mb-1">Estado</label>
@@ -178,7 +190,7 @@ export default function EmailMarketingManager() {
             </div>
             <div className="flex gap-2">
               <button onClick={() => setShowForm(false)} className="flex-1 py-2 bg-slate-100 text-slate-700 rounded-lg text-sm font-medium">Cancelar</button>
-              <button onClick={handleSave} disabled={saving || !form.name.trim()} className="flex-1 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium disabled:opacity-50">
+              <button onClick={handleSave} disabled={saving} className="flex-1 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium disabled:opacity-50">
                 {saving ? 'Guardando...' : 'Guardar'}
               </button>
             </div>
