@@ -122,12 +122,12 @@ export default function SettingsManager() {
 
   return (
     <section id="settings-manager" className="flex flex-col h-full bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-      <header className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-        <div>
+      <header className="p-6 border-b border-slate-100 flex flex-wrap justify-between items-center gap-3 bg-slate-50/50">
+        <div className="min-w-0">
           <h2 className="text-lg font-medium text-slate-950">Configuración del Sistema</h2>
           <p className="text-sm text-slate-500">Gestión de integraciones, envíos, almacenamiento y enrutamiento.</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-shrink-0 flex-wrap">
           {saveError && <span className="flex items-center text-sm text-red-600 font-medium"><AlertCircle className="w-4 h-4 mr-1"/> {saveError}</span>}
           {showSuccess && <span className="flex items-center text-sm text-green-600 font-medium"><CheckCircle2 className="w-4 h-4 mr-1"/> Guardado</span>}
           <button
