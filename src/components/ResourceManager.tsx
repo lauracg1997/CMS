@@ -70,6 +70,7 @@ export default function ResourceManager() {
   const [saveError, setSaveError] = useState('');
   const [search, setSearch] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const modalScrollRef = useRef<HTMLDivElement>(null);
 
   const uploadFile = useCallback(async (file: File) => {
     setUploading(true);
@@ -168,7 +169,10 @@ export default function ResourceManager() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!validate()) return;
+    if (!validate()) {
+      modalScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
     setSaving(true);
     setSaveError('');
     try {
@@ -381,7 +385,7 @@ export default function ResourceManager() {
       {showForm && (
         <Portal>
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl shadow-xl bg-white">
+            <div ref={modalScrollRef} className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl shadow-xl bg-white">
               <div className="sticky top-0 z-10 flex items-center justify-between px-6 pt-6 pb-4 border-b border-slate-100 bg-white">
                 <h3 className="text-lg font-semibold text-slate-950">{editing ? 'Editar Recurso' : 'Nuevo Recurso'}</h3>
                 <button onClick={() => setShowForm(false)} className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors">

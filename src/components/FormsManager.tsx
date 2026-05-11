@@ -153,12 +153,13 @@ export default function FormsManager() {
 
       {viewDetail && (
         <Portal>
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-white p-6 rounded-2xl shadow-xl w-full max-w-md relative">
-              <button onClick={() => setViewDetail(null)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-700">
-                <X className="w-5 h-5" />
-              </button>
-              <h3 className="font-semibold text-slate-950 mb-4">Detalle del envío</h3>
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg">
+              <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-slate-100">
+                <h3 className="font-semibold text-slate-950">Detalle del envío</h3>
+                <button onClick={() => setViewDetail(null)} className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"><X className="w-5 h-5" /></button>
+              </div>
+              <div className="px-6 py-5">
               <dl className="space-y-2 text-sm">
                 {(
                   [
@@ -184,9 +185,12 @@ export default function FormsManager() {
                   </div>
                 )}
               </dl>
-              <button onClick={() => setViewDetail(null)} className="w-full mt-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium">
-                Cerrar
-              </button>
+              </div>
+              <div className="px-6 pb-6">
+                <button onClick={() => setViewDetail(null)} className="w-full py-2 bg-blue-600 text-white rounded-lg text-sm font-medium">
+                  Cerrar
+                </button>
+              </div>
             </div>
           </div>
         </Portal>

@@ -38,6 +38,7 @@ export default function BlogManager() {
   const [search, setSearch] = useState('');
   const contentRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const modalScrollRef = useRef<HTMLDivElement>(null);
 
   async function fetchPosts() {
     try {
@@ -129,7 +130,10 @@ export default function BlogManager() {
   };
 
   async function handleSave() {
-    if (!validate()) return;
+    if (!validate()) {
+      modalScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
     setSaving(true);
     try {
       const method = editing ? 'PUT' : 'POST';
@@ -240,13 +244,13 @@ export default function BlogManager() {
       </div>
 
       {isModalOpen && (
-        <Portal><div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-2xl shadow-xl w-full max-w-lg relative max-h-[90vh] overflow-y-auto">
-            <button onClick={() => setIsModalOpen(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-700">
-              <X className="w-5 h-5" />
-            </button>
-            <h3 className="font-semibold text-slate-950 mb-4">{editing ? 'Editar entrada' : 'Nueva entrada'}</h3>
-            <div className="space-y-4">
+        <Portal><div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div ref={modalScrollRef} className="bg-white rounded-2xl shadow-xl w-full max-w-lg relative max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 z-10 flex items-center justify-between px-6 pt-6 pb-4 border-b border-slate-100 bg-white">
+              <h3 className="font-semibold text-slate-950">{editing ? 'Editar entrada' : 'Nueva entrada'}</h3>
+              <button onClick={() => setIsModalOpen(false)} className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="px-6 py-5 space-y-4">
 
               {/* Título */}
               <div>
@@ -320,7 +324,7 @@ export default function BlogManager() {
                     className={`flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed cursor-pointer transition-all mb-2 ${
                       dragOver ? 'border-blue-400 bg-blue-50' : uploadError ? 'border-red-300 bg-red-50' : 'border-slate-200 bg-slate-50 hover:border-blue-300 hover:bg-blue-50/30'
                     }`}
-                    style={{ height: '280px' }}
+                    style={{ height: '140px' }}
                   >
                     {uploading ? (
                       <div className="flex flex-col items-center gap-3 text-blue-500">
@@ -369,7 +373,7 @@ export default function BlogManager() {
                 <textarea
                   ref={contentRef}
                   placeholder="Escribe el contenido de la entrada..."
-                  className={`w-full p-2 border rounded-lg text-sm h-40 focus:outline-none focus:ring-2 focus:ring-blue-500/20 ${errors.content ? 'border-red-400' : 'border-slate-200'}`}
+                  className={`w-full p-2 border rounded-lg text-sm h-28 focus:outline-none focus:ring-2 focus:ring-blue-500/20 ${errors.content ? 'border-red-400' : 'border-slate-200'}`}
                   value={form.content}
                   onChange={e => { setForm({ ...form, content: e.target.value }); if (errors.content) setErrors(prev => ({ ...prev, content: '' })); }}
                 />
@@ -378,7 +382,7 @@ export default function BlogManager() {
             </div>
 
             {isUrlModalOpen && (
-              <div className="absolute inset-0 bg-black/20 flex items-center justify-center z-10">
+              <div className="absolute inset-0 bg-black/20 flex items-center justify-center z-20">
                 <div className="bg-white p-4 rounded-xl shadow-lg w-64">
                   <input type="text" placeholder="URL (ej: google.com)" className="w-full p-2 border border-slate-200 rounded-lg text-sm mb-2" value={linkUrl} onChange={e => setLinkUrl(e.target.value)} />
                   <div className="flex gap-2">
@@ -389,7 +393,7 @@ export default function BlogManager() {
               </div>
             )}
 
-            <div className="flex gap-2 mt-6">
+            <div className="flex gap-2 px-6 pb-6">
               <button onClick={() => setIsModalOpen(false)} className="flex-1 py-2 bg-slate-100 text-slate-700 rounded-lg text-sm font-medium">Cancelar</button>
               <button onClick={handleSave} disabled={saving} className="flex-1 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium disabled:opacity-50">
                 {saving ? 'Guardando...' : editing ? 'Guardar cambios' : 'Publicar'}

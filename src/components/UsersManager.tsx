@@ -33,6 +33,7 @@ export default function UsersManager() {
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [search, setSearch] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const modalScrollRef = useRef<HTMLDivElement>(null);
 
   async function fetchUsers() {
     try {
@@ -102,7 +103,10 @@ export default function UsersManager() {
   }
 
   async function handleSave() {
-    if (!validate()) return;
+    if (!validate()) {
+      modalScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
     setSaving(true);
     try {
       let res;
@@ -272,14 +276,15 @@ export default function UsersManager() {
       )}
 
       {isAddModalOpen && (
-        <Portal><div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-2xl shadow-xl w-full max-w-sm relative max-h-[90vh] overflow-y-auto">
-            <button onClick={() => setIsAddModalOpen(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-700">
-              <X className="w-5 h-5" />
-            </button>
-            <h3 className="font-semibold text-slate-950 mb-4">
-              {editingUser ? 'Editar usuario' : 'Añadir nuevo usuario'}
-            </h3>
+        <Portal><div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div ref={modalScrollRef} className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 z-10 flex items-center justify-between px-6 pt-6 pb-4 border-b border-slate-100 bg-white">
+              <h3 className="font-semibold text-slate-950">
+                {editingUser ? 'Editar usuario' : 'Añadir nuevo usuario'}
+              </h3>
+              <button onClick={() => setIsAddModalOpen(false)} className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="px-6 py-5">
 
             {/* Avatar upload */}
             <div className="flex flex-col items-center mb-5">
@@ -371,7 +376,8 @@ export default function UsersManager() {
                 </select>
               </div>
             </div>
-            <div className="flex gap-2">
+            </div>
+            <div className="flex gap-2 px-6 pb-6">
               <button onClick={() => setIsAddModalOpen(false)} className="flex-1 py-2 bg-slate-100 text-slate-700 rounded-lg text-sm font-medium">Cancelar</button>
               <button onClick={handleSave} disabled={saving} className="flex-1 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium disabled:opacity-50">
                 {saving ? 'Guardando...' : 'Guardar'}

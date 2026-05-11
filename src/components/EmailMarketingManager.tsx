@@ -1,5 +1,5 @@
 import { Edit2, Trash2, Plus, X, Send } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import NewsletterManager from './NewsletterManager';
 import { Portal } from './Portal';
 
@@ -27,6 +27,7 @@ export default function EmailMarketingManager() {
   const [errors, setErrors] = useState(emptyErrors);
   const [saving, setSaving] = useState(false);
   const [sendResult, setSendResult] = useState<{ id: number; msg: string; ok: boolean } | null>(null);
+  const modalScrollRef = useRef<HTMLDivElement>(null);
 
   async function fetchCampaigns() {
     try {
@@ -65,7 +66,10 @@ export default function EmailMarketingManager() {
   }
 
   async function handleSave() {
-    if (!validate()) return;
+    if (!validate()) {
+      modalScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
     setSaving(true);
     try {
       const method = editing ? 'PUT' : 'POST';
@@ -202,11 +206,13 @@ export default function EmailMarketingManager() {
       </div>
 
       {showForm && (
-        <Portal><div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-2xl shadow-xl w-full max-w-lg relative">
-            <button onClick={() => setShowForm(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-700"><X className="w-5 h-5" /></button>
-            <h3 className="font-semibold text-slate-950 mb-4">{editing ? 'Editar campaña' : 'Nueva campaña'}</h3>
-            <div className="space-y-3 mb-4">
+        <Portal><div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div ref={modalScrollRef} className="bg-white rounded-2xl shadow-xl w-full max-w-lg relative">
+            <div className="sticky top-0 z-10 flex items-center justify-between px-6 pt-6 pb-4 border-b border-slate-100 bg-white">
+              <h3 className="font-semibold text-slate-950">{editing ? 'Editar campaña' : 'Nueva campaña'}</h3>
+              <button onClick={() => setShowForm(false)} className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="px-6 py-5 space-y-3">
               <div>
                 <label className="block text-xs font-medium text-slate-700 mb-1">Nombre de la campaña</label>
                 <input type="text" placeholder="Ej: Campaña Mayo 2026" className={`w-full p-2 border rounded-lg text-sm ${errors.name ? 'border-red-400' : 'border-slate-200'}`} value={form.name} onChange={e => { setForm({ ...form, name: e.target.value }); if (errors.name) setErrors(prev => ({ ...prev, name: '' })); }} />
@@ -218,7 +224,7 @@ export default function EmailMarketingManager() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-700 mb-1">Contenido del email</label>
-                <textarea rows={5} placeholder="Escribe el cuerpo del email..." className="w-full p-2 border border-slate-200 rounded-lg text-sm resize-none" value={form.content} onChange={e => setForm({ ...form, content: e.target.value })} />
+                <textarea rows={3} placeholder="Escribe el cuerpo del email..." className="w-full p-2 border border-slate-200 rounded-lg text-sm resize-none" value={form.content} onChange={e => setForm({ ...form, content: e.target.value })} />
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-700 mb-1">Estado</label>
@@ -233,7 +239,7 @@ export default function EmailMarketingManager() {
                 <input type="text" placeholder="Ej: 45%" className="w-full p-2 border border-slate-200 rounded-lg text-sm" value={form.open_rate} onChange={e => setForm({ ...form, open_rate: e.target.value })} />
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 px-6 pb-6">
               <button onClick={() => setShowForm(false)} className="flex-1 py-2 bg-slate-100 text-slate-700 rounded-lg text-sm font-medium">Cancelar</button>
               <button onClick={handleSave} disabled={saving} className="flex-1 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium disabled:opacity-50">
                 {saving ? 'Guardando...' : 'Guardar'}

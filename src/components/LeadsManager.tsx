@@ -190,13 +190,13 @@ export default function LeadsManager() {
       </div>
 
       {showForm && (
-        <Portal><div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-2xl shadow-xl w-full max-w-sm relative">
-            <button onClick={() => setShowForm(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-700">
-              <X className="w-5 h-5" />
-            </button>
-            <h3 className="font-semibold text-slate-950 mb-4">{editing ? 'Editar Lead' : 'Nuevo Lead'}</h3>
-            <div className="space-y-3 mb-4">
+        <Portal><div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg">
+            <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-slate-100">
+              <h3 className="font-semibold text-slate-950">{editing ? 'Editar Lead' : 'Nuevo Lead'}</h3>
+              <button onClick={() => setShowForm(false)} className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="px-6 py-5 space-y-3">
               <div>
                 <label className="block text-xs font-medium text-slate-700 mb-1">Nombre</label>
                 <input type="text" placeholder="Nombre completo" className={`w-full p-2 border rounded-lg text-sm ${errors.name ? 'border-red-400' : 'border-slate-200'}`} value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
@@ -238,7 +238,7 @@ export default function LeadsManager() {
                 <textarea placeholder="Observaciones sobre el lead..." className="w-full p-2 border border-slate-200 rounded-lg text-sm" rows={2} value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} />
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 px-6 pb-6">
               <button onClick={() => setShowForm(false)} className="flex-1 py-2 bg-slate-100 text-slate-700 rounded-lg text-sm font-medium">Cancelar</button>
               <button onClick={handleSave} disabled={saving} className="flex-1 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium disabled:opacity-50">
                 {saving ? 'Guardando...' : 'Guardar'}
