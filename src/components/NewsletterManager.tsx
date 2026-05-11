@@ -15,7 +15,7 @@ type Newsletter = {
   last_sent_at: string | null;
 };
 
-const emptyForm = { name: '', subject: '', content: '', subscribers: 0, last_sent_at: '' };
+const emptyForm = { name: '', subject: '', content: '', subscribers: 0 };
 const emptyErrors = { name: '', subject: '', content: '' };
 
 export default function NewsletterManager() {
@@ -62,7 +62,7 @@ export default function NewsletterManager() {
 
   function openEdit(n: Newsletter) {
     setEditing(n);
-    setForm({ name: n.name, subject: n.subject || '', content: n.content || '', subscribers: n.subscribers, last_sent_at: n.last_sent_at || '' });
+    setForm({ name: n.name, subject: n.subject || '', content: n.content || '', subscribers: n.subscribers });
     setErrors(emptyErrors);
     setShowForm(true);
   }
@@ -76,7 +76,7 @@ export default function NewsletterManager() {
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify({ ...form, last_sent_at: form.last_sent_at || null, subject: form.subject || null, content: form.content || null }),
+        body: JSON.stringify({ ...form, subject: form.subject || null, content: form.content || null }),
       });
       if (res.ok) {
         setShowForm(false);
@@ -214,10 +214,6 @@ export default function NewsletterManager() {
                 <label className="block text-xs font-medium text-slate-700 mb-1">Contenido del email</label>
                 <textarea rows={3} placeholder="Escribe el cuerpo del newsletter..." className={`w-full p-2 border rounded-lg text-sm resize-none ${errors.content ? 'border-red-400' : 'border-slate-200'}`} value={form.content} onChange={e => { setForm({ ...form, content: e.target.value }); if (errors.content) setErrors(p => ({ ...p, content: '' })); }} />
                 {errors.content && <p className="text-xs text-red-500 mt-1">{errors.content}</p>}
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Último envío</label>
-                <input type="date" className="w-full p-2 border border-slate-200 rounded-lg text-sm bg-white text-slate-700" value={form.last_sent_at} onChange={e => setForm({ ...form, last_sent_at: e.target.value })} />
               </div>
             </div>
             <div className="flex gap-2 px-6 pb-6">
