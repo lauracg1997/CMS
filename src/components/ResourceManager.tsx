@@ -68,6 +68,7 @@ export default function ResourceManager() {
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [saveError, setSaveError] = useState('');
+  const [search, setSearch] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const uploadFile = useCallback(async (file: File) => {
@@ -273,6 +274,8 @@ export default function ResourceManager() {
           <input
             type="text"
             placeholder="Buscar recursos..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
             className="w-full pl-10 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20"
           />
         </div>
@@ -296,7 +299,7 @@ export default function ResourceManager() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {resources.map((res) => (
+              {resources.filter(res => !search || res.name.toLowerCase().includes(search.toLowerCase())).map((res) => (
                 <tr key={res.id} className="hover:bg-gray-50/50 transition-colors">
                   <td className="px-6 py-4 flex items-center gap-3">
                     <div className={`p-2 rounded-lg ${getIconColor(res.category)}`}>

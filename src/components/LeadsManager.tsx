@@ -31,6 +31,7 @@ export default function LeadsManager() {
   const [form, setForm] = useState(emptyForm);
   const [errors, setErrors] = useState(emptyErrors);
   const [saving, setSaving] = useState(false);
+  const [search, setSearch] = useState('');
 
   async function fetchLeads() {
     try {
@@ -138,7 +139,7 @@ export default function LeadsManager() {
       <div className="p-6 border-b border-slate-100">
         <div className="relative">
           <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
-          <input type="text" placeholder="Buscar por nombre o email..." className="w-full pl-10 pr-4 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20" />
+          <input type="text" placeholder="Buscar por nombre o email..." value={search} onChange={e => setSearch(e.target.value)} className="w-full pl-10 pr-4 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20" />
         </div>
       </div>
 
@@ -157,7 +158,7 @@ export default function LeadsManager() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {leads.map((l) => (
+              {leads.filter(l => !search || l.name.toLowerCase().includes(search.toLowerCase()) || l.email.toLowerCase().includes(search.toLowerCase())).map((l) => (
                 <tr key={l.id} className="hover:bg-slate-50/50 transition-colors">
                   <td className="px-6 py-4 text-slate-950 font-semibold">{l.name}</td>
                   <td className="px-6 py-4 text-slate-600">{l.email}</td>

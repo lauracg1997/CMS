@@ -91,11 +91,13 @@ export default function TalentionLogo({
   collapsed,
   activeView,
   height = 56,
+  useStatic = false,
 }: {
   collapsed: boolean;
   activeView: string;
   height?: number;
   invertColors?: boolean;
+  useStatic?: boolean;
 }) {
   const [gifSrc, setGifSrc] = useState<string | null>(null);
   const prevView = useRef<string>(activeView);
@@ -108,13 +110,15 @@ export default function TalentionLogo({
     setGifSrc(url);
   }
 
-  // Load on mount
+  // Load on mount (only if GIF mode)
   useEffect(() => {
+    if (useStatic) return;
     getModifiedGifData().then(() => restartGif());
   }, []);
 
-  // Restart on section change
+  // Restart on section change (only if GIF mode)
   useEffect(() => {
+    if (useStatic) return;
     if (prevView.current === activeView) return;
     prevView.current = activeView;
     if (!cachedData) return;
@@ -126,6 +130,16 @@ export default function TalentionLogo({
       <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: '1.15rem', fontWeight: 700, color: '#1e2535' }}>
         T<span style={{ color: '#2563eb' }}>.</span>
       </span>
+    );
+  }
+
+  if (useStatic) {
+    return (
+      <img
+        src="/imagenes/Logo TalentionHR (2).png"
+        alt="TalentionHR"
+        style={{ height: `${height}px`, maxWidth: '100%', objectFit: 'contain' }}
+      />
     );
   }
 

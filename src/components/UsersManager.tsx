@@ -31,6 +31,7 @@ export default function UsersManager() {
   const [errors, setErrors] = useState(emptyErrors);
   const [saving, setSaving] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);
+  const [search, setSearch] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   async function fetchUsers() {
@@ -79,6 +80,9 @@ export default function UsersManager() {
     if (!editingUser && form.password.length < 6) {
       e.password = 'La contraseña debe tener al menos 6 caracteres.';
     }
+    if (editingUser && form.password && form.password.length < 6) {
+      e.password = 'La contraseña debe tener al menos 6 caracteres.';
+    }
     setErrors(e);
     return !e.name && !e.email && !e.password;
   }
@@ -103,10 +107,12 @@ export default function UsersManager() {
     try {
       let res;
       if (editingUser) {
+        const payload: Record<string, unknown> = { name: form.name, email: form.email, role: form.role, avatar_url: form.avatar_url || null };
+        if (form.password) payload.password = form.password;
         res = await fetch(`${API_URL}/${editingUser.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-          body: JSON.stringify({ name: form.name, email: form.email, role: form.role, avatar_url: form.avatar_url || null }),
+          body: JSON.stringify(payload),
         });
       } else {
         res = await fetch(API_URL, {
@@ -187,6 +193,8 @@ export default function UsersManager() {
               <input
                 type="text"
                 placeholder="Buscar por nombre o email..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20"
               />
             </div>
@@ -208,7 +216,7 @@ export default function UsersManager() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {users.map((u) => (
+                  {users.filter(u => !search || u.name.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase())).map((u) => (
                     <tr key={u.id} className="hover:bg-slate-50/50 transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
@@ -338,19 +346,19 @@ export default function UsersManager() {
                 />
                 {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email}</p>}
               </div>
-              {!editingUser && (
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">Contraseña</label>
-                  <input
-                    type="password"
-                    placeholder="Mínimo 6 caracteres"
-                    className={`w-full p-2 border rounded-lg text-sm ${errors.password ? 'border-red-400' : 'border-slate-200'}`}
-                    value={form.password}
-                    onChange={e => setForm({ ...form, password: e.target.value })}
-                  />
-                  {errors.password && <p className="text-xs text-red-500 mt-1">{errors.password}</p>}
-                </div>
-              )}
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">
+                  Contraseña {editingUser && <span className="text-slate-400 font-normal">(dejar vacío para no cambiar)</span>}
+                </label>
+                <input
+                  type="password"
+                  placeholder={editingUser ? '••••••••' : 'Mínimo 6 caracteres'}
+                  className={`w-full p-2 border rounded-lg text-sm ${errors.password ? 'border-red-400' : 'border-slate-200'}`}
+                  value={form.password}
+                  onChange={e => setForm({ ...form, password: e.target.value })}
+                />
+                {errors.password && <p className="text-xs text-red-500 mt-1">{errors.password}</p>}
+              </div>
               <div>
                 <label className="block text-xs font-medium text-slate-700 mb-1">Rol</label>
                 <select

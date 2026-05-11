@@ -1,4 +1,4 @@
-import { Search, Edit2, Trash2, Plus, X } from 'lucide-react';
+import { Edit2, Trash2, Plus, X, Send } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import NewsletterManager from './NewsletterManager';
 import { Portal } from './Portal';
@@ -8,11 +8,13 @@ const API_URL = '/api/campaigns';
 type Campaign = {
   id: number;
   name: string;
-  status: 'Activa' | 'Borrador';
+  subject: string | null;
+  content: string | null;
+  status: 'Activa' | 'Borrador' | 'Enviada';
   open_rate: string | null;
 };
 
-const emptyForm = { name: '', status: 'Borrador' as Campaign['status'], open_rate: '' };
+const emptyForm = { name: '', subject: '', content: '', status: 'Borrador' as Campaign['status'], open_rate: '' };
 const emptyErrors = { name: '' };
 
 export default function EmailMarketingManager() {
@@ -24,6 +26,7 @@ export default function EmailMarketingManager() {
   const [form, setForm] = useState(emptyForm);
   const [errors, setErrors] = useState(emptyErrors);
   const [saving, setSaving] = useState(false);
+  const [sendResult, setSendResult] = useState<{ id: number; msg: string; ok: boolean } | null>(null);
 
   async function fetchCampaigns() {
     try {
@@ -56,7 +59,7 @@ export default function EmailMarketingManager() {
 
   function openEdit(c: Campaign) {
     setEditing(c);
-    setForm({ name: c.name, status: c.status, open_rate: c.open_rate || '' });
+    setForm({ name: c.name, subject: c.subject || '', content: c.content || '', status: c.status, open_rate: c.open_rate || '' });
     setErrors(emptyErrors);
     setShowForm(true);
   }
@@ -90,6 +93,7 @@ export default function EmailMarketingManager() {
   }
 
   async function handleToggleStatus(c: Campaign) {
+    if (c.status === 'Enviada') return;
     const newStatus = c.status === 'Activa' ? 'Borrador' : 'Activa';
     await fetch(`${API_URL}/${c.id}`, {
       method: 'PUT',
@@ -97,6 +101,22 @@ export default function EmailMarketingManager() {
       body: JSON.stringify({ status: newStatus }),
     });
     fetchCampaigns();
+  }
+
+  async function handleSendCampaign(c: Campaign) {
+    if (!confirm(`¿Enviar campaña "${c.name}" a todos los leads?`)) return;
+    setSendResult(null);
+    try {
+      const res = await fetch(`${API_URL}/${c.id}/send`, {
+        method: 'POST',
+        headers: { 'Accept': 'application/json' },
+      });
+      const data = await res.json();
+      setSendResult({ id: c.id, msg: data.message, ok: res.ok });
+      fetchCampaigns();
+    } catch {
+      setSendResult({ id: c.id, msg: 'Error al enviar la campaña.', ok: false });
+    }
   }
 
   return (
@@ -141,13 +161,29 @@ export default function EmailMarketingManager() {
                     <tr key={c.id} className="hover:bg-slate-50/50 transition-colors">
                       <td className="px-6 py-4 text-slate-950 font-semibold">{c.name}</td>
                       <td className="px-6 py-4">
-                        <button onClick={() => handleToggleStatus(c)} className={`px-2 py-1 rounded-full text-xs font-medium cursor-pointer transition ${c.status === 'Activa' ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'}`}>
+                        <button
+                          onClick={() => handleToggleStatus(c)}
+                          disabled={c.status === 'Enviada'}
+                          className={`px-2 py-1 rounded-full text-xs font-medium transition ${
+                            c.status === 'Enviada' ? 'bg-blue-100 text-blue-700 cursor-default' :
+                            c.status === 'Activa' ? 'bg-green-100 text-green-700 hover:bg-green-200 cursor-pointer' :
+                            'bg-yellow-100 text-yellow-700 hover:bg-yellow-200 cursor-pointer'
+                          }`}
+                        >
                           {c.status}
                         </button>
                       </td>
-                      <td className="px-6 py-4 text-slate-600">{c.open_rate || '0%'}</td>
-                      <td className="px-6 py-4 text-right">
-                        <button onClick={() => openEdit(c)} className="text-slate-400 hover:text-blue-600 transition-colors mr-3">
+                      <td className="px-6 py-4 text-slate-600">{c.open_rate || '—'}</td>
+                      <td className="px-6 py-4 text-right flex items-center justify-end gap-2">
+                        {sendResult?.id === c.id && (
+                          <span className={`text-xs mr-2 ${sendResult.ok ? 'text-green-600' : 'text-red-500'}`}>{sendResult.msg}</span>
+                        )}
+                        {c.status !== 'Enviada' && (
+                          <button onClick={() => handleSendCampaign(c)} title="Enviar campaña" className="text-slate-400 hover:text-blue-600 transition-colors">
+                            <Send className="w-4 h-4" />
+                          </button>
+                        )}
+                        <button onClick={() => openEdit(c)} className="text-slate-400 hover:text-blue-600 transition-colors">
                           <Edit2 className="w-4 h-4" />
                         </button>
                         <button onClick={() => handleDelete(c)} className="text-slate-400 hover:text-red-600 transition-colors">
@@ -167,20 +203,29 @@ export default function EmailMarketingManager() {
 
       {showForm && (
         <Portal><div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-2xl shadow-xl w-full max-w-sm relative">
+          <div className="bg-white p-6 rounded-2xl shadow-xl w-full max-w-lg relative">
             <button onClick={() => setShowForm(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-700"><X className="w-5 h-5" /></button>
             <h3 className="font-semibold text-slate-950 mb-4">{editing ? 'Editar campaña' : 'Nueva campaña'}</h3>
             <div className="space-y-3 mb-4">
               <div>
                 <label className="block text-xs font-medium text-slate-700 mb-1">Nombre de la campaña</label>
-                <input type="text" placeholder="Ej: Newsletter Mayo 2026" className={`w-full p-2 border rounded-lg text-sm ${errors.name ? 'border-red-400' : 'border-slate-200'}`} value={form.name} onChange={e => { setForm({ ...form, name: e.target.value }); if (errors.name) setErrors(prev => ({ ...prev, name: '' })); }} />
+                <input type="text" placeholder="Ej: Campaña Mayo 2026" className={`w-full p-2 border rounded-lg text-sm ${errors.name ? 'border-red-400' : 'border-slate-200'}`} value={form.name} onChange={e => { setForm({ ...form, name: e.target.value }); if (errors.name) setErrors(prev => ({ ...prev, name: '' })); }} />
                 {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name}</p>}
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">Asunto del email</label>
+                <input type="text" placeholder="Ej: ¡Nuevas ofertas de empleo para ti!" className="w-full p-2 border border-slate-200 rounded-lg text-sm" value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })} />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">Contenido del email</label>
+                <textarea rows={5} placeholder="Escribe el cuerpo del email..." className="w-full p-2 border border-slate-200 rounded-lg text-sm resize-none" value={form.content} onChange={e => setForm({ ...form, content: e.target.value })} />
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-700 mb-1">Estado</label>
                 <select value={form.status} onChange={e => setForm({ ...form, status: e.target.value as Campaign['status'] })} className="w-full p-2 border border-slate-200 rounded-lg text-sm bg-white text-slate-700">
                   <option value="Borrador">Borrador</option>
                   <option value="Activa">Activa</option>
+                  <option value="Enviada">Enviada</option>
                 </select>
               </div>
               <div>

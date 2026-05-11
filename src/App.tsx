@@ -43,13 +43,20 @@ window.fetch = function (input: RequestInfo | URL, init?: RequestInit) {
   return _originalFetch(input, init);
 };
 
-const data = [
-  { name: 'Lun', leads: 400, cvs: 240 },
-  { name: 'Mar', leads: 300, cvs: 139 },
-  { name: 'Mié', leads: 200, cvs: 980 },
-  { name: 'Jue', leads: 278, cvs: 390 },
-  { name: 'Vie', leads: 189, cvs: 480 },
-];
+function buildChartData(leads: any[], candidates: any[]) {
+  const days = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const dateStr = d.toISOString().split('T')[0];
+    const dayName = d.toLocaleDateString('es-ES', { weekday: 'short' });
+    const label = dayName.charAt(0).toUpperCase() + dayName.slice(1, 3);
+    const leadsCount = leads.filter(l => l.created_at?.startsWith(dateStr)).length;
+    const cvsCount = candidates.filter(c => c.created_at?.startsWith(dateStr)).length;
+    days.push({ name: label, leads: leadsCount, cvs: cvsCount });
+  }
+  return days;
+}
 
 type AuthUser = { name: string; email: string; role: string; avatar_url: string | null };
 
@@ -69,15 +76,21 @@ export default function App() {
   const [totalCandidates, setTotalCandidates] = useState<number | null>(null);
   const [recentCandidates, setRecentCandidates] = useState<{ id: number; name: string; position: string; status: string }[]>([]);
   const [activityLogs, setActivityLogs] = useState<{ id: number; description: string; created_at: string }[]>([]);
+  const [chartData, setChartData] = useState<{ name: string; leads: number; cvs: number }[]>(buildChartData([], []));
 
   useEffect(() => {
     if (!token) return;
-    fetch('/api/leads').then(r => r.json()).then(d => setTotalLeads(Array.isArray(d) ? d.length : 0)).catch(() => setTotalLeads(0));
-    fetch('/api/candidates').then(r => r.json()).then((d: { id: number; name: string; position: string; status: string }[]) => {
-      if (!Array.isArray(d)) return;
-      setTotalCandidates(d.length);
-      setRecentCandidates(d.slice(0, 5));
-    }).catch(() => { setTotalCandidates(0); setRecentCandidates([]); });
+    Promise.all([
+      fetch('/api/leads').then(r => r.json()).catch(() => []),
+      fetch('/api/candidates').then(r => r.json()).catch(() => []),
+    ]).then(([leadsData, candidatesData]) => {
+      const leads = Array.isArray(leadsData) ? leadsData : [];
+      const candidates = Array.isArray(candidatesData) ? candidatesData : [];
+      setTotalLeads(leads.length);
+      setTotalCandidates(candidates.length);
+      setRecentCandidates(candidates.slice(0, 5));
+      setChartData(buildChartData(leads, candidates));
+    });
     fetch('/api/activity-logs').then(r => r.json()).then(d => setActivityLogs(Array.isArray(d) ? d : [])).catch(() => setActivityLogs([]));
   }, [token]);
 
@@ -107,14 +120,23 @@ export default function App() {
         id="sidebar" 
         className={`bg-white border-r border-slate-200 flex flex-col transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-52'}`}
       >
-        <div className="p-6 flex items-center justify-between">
-          <TalentionLogo collapsed={isCollapsed} activeView={activeView} />
+        <div className={`flex items-center ${isCollapsed ? 'flex-col justify-center gap-2 py-4' : 'justify-between px-3 py-3'}`}>
+          {!isCollapsed && (
+            <div style={{ maxWidth: '130px', overflow: 'hidden' }}>
+              <TalentionLogo collapsed={false} activeView={activeView} useStatic={true} height={38} />
+            </div>
+          )}
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 transition-colors"
+            className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 transition-colors flex-shrink-0"
           >
             {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
           </button>
+          {isCollapsed && (
+            <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: '1.1rem', fontWeight: 700, color: '#1e2535' }}>
+              T<span style={{ color: '#2563eb' }}>.</span>
+            </span>
+          )}
         </div>
         <nav id="main-nav" className="flex-1 px-3 space-y-1">
           {navItems.map((item, idx) => {
@@ -210,7 +232,7 @@ export default function App() {
                 <h3 className="text-sm font-semibold text-slate-950 mb-6">Actividad Semanal</h3>
                 <div className="h-40">
                   <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={data}>
+                    <AreaChart data={chartData}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} />
                       <XAxis dataKey="name" fontSize={11} axisLine={false} tickLine={false} />
                       <Tooltip />

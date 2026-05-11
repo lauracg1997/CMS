@@ -1,27 +1,55 @@
-import { X, Globe, Mail, Phone, MapPin, Linkedin, Twitter, Instagram, Save } from 'lucide-react';
-import { useState } from 'react';
+import { X, Globe, Mail, Phone, MapPin, Linkedin, Twitter, Instagram, Save, CheckCircle2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { Portal } from './Portal';
 
+const DEFAULT = {
+  companyName: 'TalentionHR',
+  tagline: 'Soluciones de talento para empresas modernas',
+  email: 'hola@talentionhr.es',
+  phone: '+34 900 000 000',
+  website: 'https://talentionhr.es',
+  address: '',
+  sector: 'Recursos Humanos',
+  size: '1-10',
+  linkedin: '',
+  twitter: '',
+  instagram: '',
+};
+
 export default function ProfileModal({ onClose }: { onClose: () => void }) {
-  const [profile, setProfile] = useState({
-    companyName: 'TalentionHR',
-    tagline: 'Soluciones de talento para empresas modernas',
-    email: 'hola@talentionhr.es',
-    phone: '+34 900 000 000',
-    website: 'https://talentionhr.es',
-    address: 'Calle Ejemplo 1, Madrid, España',
-    sector: 'Recursos Humanos',
-    size: '1-10',
-    linkedin: '',
-    twitter: '',
-    instagram: '',
-  });
-
+  const [profile, setProfile] = useState(DEFAULT);
+  const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState('');
 
-  function handleSave() {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+  useEffect(() => {
+    fetch('/api/settings')
+      .then(r => r.json())
+      .then(data => {
+        if (data.company_profile) {
+          try { setProfile({ ...DEFAULT, ...JSON.parse(data.company_profile) }); } catch {}
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  async function handleSave() {
+    setSaving(true);
+    setError('');
+    try {
+      const res = await fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({ company_profile: JSON.stringify(profile) }),
+      });
+      if (!res.ok) { setError('Error al guardar.'); return; }
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch {
+      setError('No se pudo conectar al servidor.');
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -116,13 +144,15 @@ export default function ProfileModal({ onClose }: { onClose: () => void }) {
                 </div>
               </div>
             </div>
+
+            {error && <p className="text-xs text-red-500">{error}</p>}
           </div>
 
           <div className="px-6 pb-6 flex gap-2">
             <button onClick={onClose} className="flex-1 py-2 bg-slate-100 text-slate-700 rounded-lg text-sm font-medium">Cancelar</button>
-            <button onClick={handleSave} className="flex-1 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium flex items-center justify-center gap-2">
-              <Save className="w-4 h-4" />
-              {saved ? 'Guardado' : 'Guardar'}
+            <button onClick={handleSave} disabled={saving} className="flex-1 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-50">
+              {saved ? <CheckCircle2 className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+              {saving ? 'Guardando...' : saved ? 'Guardado' : 'Guardar'}
             </button>
           </div>
         </div>

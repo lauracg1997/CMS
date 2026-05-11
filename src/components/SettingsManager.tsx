@@ -115,14 +115,9 @@ export default function SettingsManager() {
   };
 
   const testEmailConnection = () => {
-    setIsTestingEmail(true);
-    setTestResult(null);
-    setTimeout(() => {
-      setIsTestingEmail(false);
-      const isSuccess = !!(emailForm.smtpHost && emailForm.smtpUser && emailForm.smtpPass);
-      setTestResult(isSuccess ? 'success' : 'error');
-      setEmailForm({ ...emailForm, status: isSuccess ? 'connected' : 'error' });
-    }, 1500);
+    const allFilled = !!(emailForm.smtpHost && emailForm.smtpPort && emailForm.smtpUser && emailForm.smtpPass && emailForm.fromEmail);
+    setTestResult(allFilled ? 'success' : 'error');
+    setEmailForm({ ...emailForm, status: allFilled ? 'connected' : 'error' });
   };
 
   return (
@@ -358,7 +353,7 @@ export default function SettingsManager() {
                         </button>
 
                         {testResult === 'success' && (
-                          <span className="flex items-center text-sm font-medium text-green-600 bg-green-50 px-3 py-1.5 rounded-lg border border-green-100"><CheckCircle2 className="w-4 h-4 mr-1.5"/> Conexión exitosa</span>
+                          <span className="flex items-center text-sm font-medium text-green-600 bg-green-50 px-3 py-1.5 rounded-lg border border-green-100"><CheckCircle2 className="w-4 h-4 mr-1.5"/> Configuración completa</span>
                         )}
                         {testResult === 'error' && (
                           <span className="flex items-center text-sm font-medium text-red-600 bg-red-50 px-3 py-1.5 rounded-lg border border-red-100"><AlertCircle className="w-4 h-4 mr-1.5"/> Faltan datos o credenciales inválidas</span>

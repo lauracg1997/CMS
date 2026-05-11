@@ -35,6 +35,7 @@ export default function BlogManager() {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState('');
   const [dragOver, setDragOver] = useState(false);
+  const [search, setSearch] = useState('');
   const contentRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -184,7 +185,7 @@ export default function BlogManager() {
       <div className="p-6 border-b border-slate-100">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
-          <input type="text" placeholder="Buscar por título..." className="w-full pl-10 pr-4 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20" />
+          <input type="text" placeholder="Buscar por título..." value={search} onChange={e => setSearch(e.target.value)} className="w-full pl-10 pr-4 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20" />
         </div>
       </div>
 
@@ -203,7 +204,7 @@ export default function BlogManager() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {posts.map((p) => (
+              {posts.filter(p => !search || p.title.toLowerCase().includes(search.toLowerCase())).map((p) => (
                 <tr key={p.id} className="hover:bg-slate-50/50 transition-colors">
                   <td className="px-6 py-4 text-slate-950 font-semibold">{p.title}</td>
                   <td className="px-6 py-4">
