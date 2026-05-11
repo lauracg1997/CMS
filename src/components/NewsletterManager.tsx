@@ -1,6 +1,7 @@
 import { Edit2, Trash2, Plus, Users, X, Send } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Portal } from './Portal';
+import ConfirmModal from './ConfirmModal';
 
 const API_URL = '/api/newsletters';
 
@@ -26,6 +27,7 @@ export default function NewsletterManager() {
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState(emptyErrors);
   const [sendResult, setSendResult] = useState<{ id: number; msg: string; ok: boolean } | null>(null);
+  const [confirm, setConfirm] = useState<{ action: 'send' | 'delete'; item: Newsletter } | null>(null);
 
   async function fetchNewsletters() {
     try {
@@ -88,24 +90,33 @@ export default function NewsletterManager() {
   }
 
   async function handleDelete(n: Newsletter) {
-    if (!confirm(`¿Eliminar "${n.name}"?`)) return;
-    await fetch(`${API_URL}/${n.id}`, { method: 'DELETE' });
-    fetchNewsletters();
+    setConfirm({ action: 'delete', item: n });
   }
 
   async function handleSend(n: Newsletter) {
-    if (!confirm(`¿Enviar newsletter "${n.name}" a todos los leads?`)) return;
-    setSendResult(null);
-    try {
-      const res = await fetch(`${API_URL}/${n.id}/send`, {
-        method: 'POST',
-        headers: { 'Accept': 'application/json' },
-      });
-      const data = await res.json();
-      setSendResult({ id: n.id, msg: data.message, ok: res.ok });
+    setConfirm({ action: 'send', item: n });
+  }
+
+  async function executeConfirm() {
+    if (!confirm) return;
+    const n = confirm.item;
+    setConfirm(null);
+    if (confirm.action === 'delete') {
+      await fetch(`${API_URL}/${n.id}`, { method: 'DELETE' });
       fetchNewsletters();
-    } catch {
-      setSendResult({ id: n.id, msg: 'Error al enviar.', ok: false });
+    } else {
+      setSendResult(null);
+      try {
+        const res = await fetch(`${API_URL}/${n.id}/send`, {
+          method: 'POST',
+          headers: { 'Accept': 'application/json' },
+        });
+        const data = await res.json();
+        setSendResult({ id: n.id, msg: data.message, ok: res.ok });
+        fetchNewsletters();
+      } catch {
+        setSendResult({ id: n.id, msg: 'Error al enviar.', ok: false });
+      }
     }
   }
 
@@ -170,6 +181,16 @@ export default function NewsletterManager() {
           </table>
         )}
       </div>
+
+      {confirm && (
+        <ConfirmModal
+          message={confirm.action === 'delete' ? `¿Eliminar "${confirm.item.name}"?` : `¿Enviar newsletter "${confirm.item.name}" a todos los leads?`}
+          confirmLabel={confirm.action === 'delete' ? 'Eliminar' : 'Enviar'}
+          danger={confirm.action === 'delete'}
+          onConfirm={executeConfirm}
+          onCancel={() => setConfirm(null)}
+        />
+      )}
 
       {showForm && (
         <Portal><div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">

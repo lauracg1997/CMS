@@ -2,6 +2,7 @@ import { Edit2, Trash2, Plus, X, Send } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import NewsletterManager from './NewsletterManager';
 import { Portal } from './Portal';
+import ConfirmModal from './ConfirmModal';
 
 const API_URL = '/api/campaigns';
 
@@ -27,6 +28,7 @@ export default function EmailMarketingManager() {
   const [errors, setErrors] = useState(emptyErrors);
   const [saving, setSaving] = useState(false);
   const [sendResult, setSendResult] = useState<{ id: number; msg: string; ok: boolean } | null>(null);
+  const [confirmModal, setConfirmModal] = useState<{ action: 'send' | 'delete'; item: Campaign } | null>(null);
   const modalScrollRef = useRef<HTMLDivElement>(null);
 
   async function fetchCampaigns() {
@@ -91,9 +93,7 @@ export default function EmailMarketingManager() {
   }
 
   async function handleDelete(c: Campaign) {
-    if (!confirm(`¿Eliminar campaña "${c.name}"?`)) return;
-    await fetch(`${API_URL}/${c.id}`, { method: 'DELETE' });
-    fetchCampaigns();
+    setConfirmModal({ action: 'delete', item: c });
   }
 
   async function handleToggleStatus(c: Campaign) {
@@ -108,18 +108,29 @@ export default function EmailMarketingManager() {
   }
 
   async function handleSendCampaign(c: Campaign) {
-    if (!confirm(`¿Enviar campaña "${c.name}" a todos los leads?`)) return;
-    setSendResult(null);
-    try {
-      const res = await fetch(`${API_URL}/${c.id}/send`, {
-        method: 'POST',
-        headers: { 'Accept': 'application/json' },
-      });
-      const data = await res.json();
-      setSendResult({ id: c.id, msg: data.message, ok: res.ok });
+    setConfirmModal({ action: 'send', item: c });
+  }
+
+  async function executeConfirm() {
+    if (!confirmModal) return;
+    const c = confirmModal.item;
+    setConfirmModal(null);
+    if (confirmModal.action === 'delete') {
+      await fetch(`${API_URL}/${c.id}`, { method: 'DELETE' });
       fetchCampaigns();
-    } catch {
-      setSendResult({ id: c.id, msg: 'Error al enviar la campaña.', ok: false });
+    } else {
+      setSendResult(null);
+      try {
+        const res = await fetch(`${API_URL}/${c.id}/send`, {
+          method: 'POST',
+          headers: { 'Accept': 'application/json' },
+        });
+        const data = await res.json();
+        setSendResult({ id: c.id, msg: data.message, ok: res.ok });
+        fetchCampaigns();
+      } catch {
+        setSendResult({ id: c.id, msg: 'Error al enviar la campaña.', ok: false });
+      }
     }
   }
 
@@ -204,6 +215,16 @@ export default function EmailMarketingManager() {
           <NewsletterManager />
         )}
       </div>
+
+      {confirmModal && (
+        <ConfirmModal
+          message={confirmModal.action === 'delete' ? `¿Eliminar campaña "${confirmModal.item.name}"?` : `¿Enviar campaña "${confirmModal.item.name}" a todos los leads?`}
+          confirmLabel={confirmModal.action === 'delete' ? 'Eliminar' : 'Enviar'}
+          danger={confirmModal.action === 'delete'}
+          onConfirm={executeConfirm}
+          onCancel={() => setConfirmModal(null)}
+        />
+      )}
 
       {showForm && (
         <Portal><div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
