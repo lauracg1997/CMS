@@ -334,12 +334,10 @@ export default function SettingsManager() {
                             </div>
                           </div>
                           <div className="flex items-center gap-4">
-                            {account.status === 'connected' ? (
-                              <span className="flex items-center text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded-full"><CheckCircle2 className="w-3 h-3 mr-1"/> Conectado</span>
-                            ) : account.status === 'error' ? (
+                            {account.status === 'error' ? (
                               <span className="flex items-center text-xs font-medium text-red-600 bg-red-50 px-2 py-1 rounded-full"><AlertCircle className="w-3 h-3 mr-1"/> Error SMTP</span>
                             ) : (
-                              <span className="flex items-center text-xs font-medium text-slate-500 bg-slate-100 px-2 py-1 rounded-full">Sin verificar</span>
+                              <span className="flex items-center text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded-full"><CheckCircle2 className="w-3 h-3 mr-1"/> Conectado</span>
                             )}
                             <button
                               onClick={() => { setEmailForm(account); setTestResult(null); }}
