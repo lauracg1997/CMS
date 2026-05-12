@@ -107,12 +107,34 @@ export default function SettingsManager() {
   };
 
   const saveEmailAccount = async () => {
-    const newAccounts = emailAccounts.find(a => a.id === emailForm.id)
-      ? emailAccounts.map(a => a.id === emailForm.id ? emailForm : a)
-      : [...emailAccounts, emailForm];
-
     setIsSaving(true);
     setSaveError('');
+
+    // Test connection first to set real status
+    let verifiedStatus = 'error';
+    try {
+      const testRes = await fetch('/api/settings/test-smtp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({
+          smtpHost:  emailForm.smtpHost,
+          smtpPort:  emailForm.smtpPort,
+          smtpUser:  emailForm.smtpUser,
+          smtpPass:  emailForm.smtpPass,
+          fromEmail: emailForm.fromEmail,
+          fromName:  emailForm.fromName,
+        }),
+      });
+      verifiedStatus = testRes.ok ? 'connected' : 'error';
+    } catch {
+      verifiedStatus = 'error';
+    }
+
+    const verifiedAccount = { ...emailForm, status: verifiedStatus };
+    const newAccounts = emailAccounts.find(a => a.id === emailForm.id)
+      ? emailAccounts.map(a => a.id === emailForm.id ? verifiedAccount : a)
+      : [...emailAccounts, verifiedAccount];
+
     try {
       const res = await fetch('/api/settings', {
         method: 'POST',
@@ -131,6 +153,7 @@ export default function SettingsManager() {
       }
       setEmailAccounts(newAccounts);
       setEmailForm(null);
+      setTestResult(null);
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
     } catch {
@@ -423,7 +446,7 @@ export default function SettingsManager() {
                         disabled={isSaving}
                         className="flex items-center px-6 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 transition"
                       >
-                        {isSaving ? 'Guardando...' : 'Guardar cuenta'}
+                        {isSaving ? 'Verificando y guardando...' : 'Guardar cuenta'}
                       </button>
                     </div>
                   </>
