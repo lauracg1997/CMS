@@ -29,6 +29,7 @@ export default function EmailMarketingManager() {
   const [errors, setErrors] = useState(emptyErrors);
   const [saving, setSaving] = useState(false);
   const [sendResult, setSendResult] = useState<{ id: number; msg: string; ok: boolean } | null>(null);
+  const [newsletterTrigger, setNewsletterTrigger] = useState(0);
   const [confirmModal, setConfirmModal] = useState<{ action: 'send' | 'delete'; item: Campaign } | null>(null);
   const modalScrollRef = useRef<HTMLDivElement>(null);
 
@@ -157,6 +158,12 @@ export default function EmailMarketingManager() {
             Nueva campaña
           </button>
         )}
+        {activeTab === 'Newsletter' && (
+          <button onClick={() => setNewsletterTrigger(t => t + 1)} className="flex items-center px-4 py-2 mb-3 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition">
+            <Plus className="w-4 h-4 mr-2" />
+            Nueva lista
+          </button>
+        )}
       </header>
 
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -217,7 +224,7 @@ export default function EmailMarketingManager() {
             )}
           </div>
         ) : (
-          <NewsletterManager />
+          <NewsletterManager triggerOpen={newsletterTrigger} />
         )}
       </div>
 

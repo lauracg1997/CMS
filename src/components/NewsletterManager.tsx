@@ -1,6 +1,6 @@
-import { Edit2, Trash2, Plus, X, Send, RefreshCw } from 'lucide-react';
+import { Edit2, Trash2, X, Send, RefreshCw } from 'lucide-react';
 import RichTextEditor from './RichTextEditor';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Portal } from './Portal';
 import ConfirmModal from './ConfirmModal';
 
@@ -19,7 +19,8 @@ type Newsletter = {
 const emptyForm = { name: '', subject: '', content: '', subscribers: 0 };
 const emptyErrors = { name: '', subject: '', content: '' };
 
-export default function NewsletterManager() {
+export default function NewsletterManager({ triggerOpen = 0 }: { triggerOpen?: number }) {
+  const prevTrigger = useRef(0);
   const [newsletters, setNewsletters] = useState<Newsletter[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -44,6 +45,13 @@ export default function NewsletterManager() {
   }
 
   useEffect(() => { fetchNewsletters(); }, []);
+
+  useEffect(() => {
+    if (triggerOpen > prevTrigger.current) {
+      prevTrigger.current = triggerOpen;
+      openAdd();
+    }
+  }, [triggerOpen]);
 
   function validate() {
     const e = { name: '', subject: '', content: '' };
@@ -123,13 +131,6 @@ export default function NewsletterManager() {
 
   return (
     <>
-      <div className="p-4 border-b border-slate-100 flex justify-end">
-        <button onClick={openAdd} className="flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition">
-          <Plus className="w-4 h-4 mr-2" />
-          Nueva lista
-        </button>
-      </div>
-
       <div className="flex-1 overflow-y-auto">
         {loading && <div className="flex items-center justify-center h-40 text-sm text-slate-400">Cargando...</div>}
         {!loading && newsletters.length === 0 && <div className="flex items-center justify-center h-40 text-sm text-slate-400">No hay listas. Crea la primera.</div>}
