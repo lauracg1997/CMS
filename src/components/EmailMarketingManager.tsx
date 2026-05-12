@@ -176,6 +176,7 @@ export default function EmailMarketingManager() {
                 <thead className="text-slate-500 text-xs uppercase border-b border-slate-100 sticky top-0 bg-white">
                   <tr>
                     <th className="px-6 py-4 font-semibold">Nombre</th>
+                    <th className="px-6 py-4 font-semibold">Asunto</th>
                     <th className="px-6 py-4 font-semibold">Estado</th>
                     <th className="px-6 py-4 font-semibold">Tasa Apertura</th>
                     <th className="px-6 py-4 font-semibold text-right">Acciones</th>
@@ -185,6 +186,7 @@ export default function EmailMarketingManager() {
                   {campaigns.map((c) => (
                     <tr key={c.id} className="hover:bg-slate-50/50 transition-colors">
                       <td className="px-6 py-4 text-slate-950 font-semibold">{c.name}</td>
+                      <td className="px-6 py-4 text-slate-600 max-w-[200px] truncate">{c.subject || '—'}</td>
                       <td className="px-6 py-4">
                         <button
                           onClick={() => handleToggleStatus(c)}
