@@ -181,14 +181,16 @@ export default function SettingsManager() {
         <div className="flex items-center gap-3 flex-shrink-0 flex-wrap">
           {saveError && <span className="flex items-center text-sm text-red-600 font-medium"><AlertCircle className="w-4 h-4 mr-1"/> {saveError}</span>}
           {showSuccess && <span className="flex items-center text-sm text-green-600 font-medium"><CheckCircle2 className="w-4 h-4 mr-1"/> Guardado</span>}
-          <button
-            onClick={handleSave}
-            disabled={isSaving}
-            className={`flex items-center px-4 py-2 text-white text-sm font-semibold rounded-lg transition ${isSaving ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}
-          >
-            <Save className={`w-4 h-4 mr-2 ${isSaving ? 'animate-pulse' : ''}`} />
-            {isSaving ? 'Guardando...' : 'Guardar Cambios'}
-          </button>
+          {activeTab !== 'email' && (
+            <button
+              onClick={handleSave}
+              disabled={isSaving}
+              className={`flex items-center px-4 py-2 text-white text-sm font-semibold rounded-lg transition ${isSaving ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}
+            >
+              <Save className={`w-4 h-4 mr-2 ${isSaving ? 'animate-pulse' : ''}`} />
+              {isSaving ? 'Guardando...' : 'Guardar Cambios'}
+            </button>
+          )}
         </div>
       </header>
 
@@ -314,7 +316,7 @@ export default function SettingsManager() {
                             ) : account.status === 'error' ? (
                               <span className="flex items-center text-xs font-medium text-red-600 bg-red-50 px-2 py-1 rounded-full"><AlertCircle className="w-3 h-3 mr-1"/> Error SMTP</span>
                             ) : (
-                              <span className="flex items-center text-xs font-medium text-amber-600 bg-amber-50 px-2 py-1 rounded-full"><Loader2 className="w-3 h-3 mr-1 animate-spin"/> Pendiente</span>
+                              <span className="flex items-center text-xs font-medium text-slate-500 bg-slate-100 px-2 py-1 rounded-full">Sin verificar</span>
                             )}
                             <button
                               onClick={() => { setEmailForm(account); setTestResult(null); }}
