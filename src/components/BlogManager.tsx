@@ -202,6 +202,7 @@ export default function BlogManager() {
               <tr>
                 <th className="px-6 py-4 font-semibold">Título</th>
                 <th className="px-6 py-4 font-semibold">Portada</th>
+                <th className="px-6 py-4 font-semibold">Contenido</th>
                 <th className="px-6 py-4 font-semibold">Estado</th>
                 <th className="px-6 py-4 font-semibold">Fecha</th>
                 <th className="px-6 py-4 font-semibold text-right">Acciones</th>
@@ -213,9 +214,14 @@ export default function BlogManager() {
                   <td className="px-6 py-4 text-slate-950 font-semibold">{p.title}</td>
                   <td className="px-6 py-4">
                     {p.cover_image_url
-                      ? <img src={p.cover_image_url} alt="" className="w-16 h-12 object-contain rounded-md border border-slate-100 bg-slate-50" />
+                      ? <img src={p.cover_image_url} alt="portada" className="w-24 h-16 object-cover rounded-lg border border-slate-100 bg-slate-50" />
                       : <span className="text-slate-300 text-xs">—</span>
                     }
+                  </td>
+                  <td className="px-6 py-4 text-slate-500 text-xs max-w-[180px]">
+                    {p.content
+                      ? p.content.replace(/<[^>]+>/g, '').split(/\s+/).filter(Boolean).slice(0, 5).join(' ') + '...'
+                      : '—'}
                   </td>
                   <td className="px-6 py-4">
                     <button onClick={() => handleToggleStatus(p)} className={`px-2 py-1 rounded-full text-xs font-medium cursor-pointer transition ${p.status === 'Publicado' ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'}`}>
