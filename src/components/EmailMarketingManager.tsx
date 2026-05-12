@@ -16,7 +16,7 @@ type Campaign = {
 };
 
 const emptyForm = { name: '', subject: '', content: '', status: 'Borrador' as Campaign['status'], open_rate: '' };
-const emptyErrors = { name: '' };
+const emptyErrors = { name: '', subject: '', content: '' };
 
 export default function EmailMarketingManager() {
   const [activeTab, setActiveTab] = useState<'Campaigns' | 'Newsletter'>('Campaigns');
@@ -47,10 +47,12 @@ export default function EmailMarketingManager() {
   useEffect(() => { fetchCampaigns(); }, []);
 
   function validate() {
-    const e = { name: '' };
+    const e = { name: '', subject: '', content: '' };
     if (!form.name.trim()) e.name = 'El nombre de la campaña es obligatorio.';
+    if (!form.subject.trim()) e.subject = 'El asunto es obligatorio.';
+    if (!form.content.trim()) e.content = 'El contenido es obligatorio.';
     setErrors(e);
-    return !e.name;
+    return !e.name && !e.subject && !e.content;
   }
 
   function openAdd() {
@@ -241,11 +243,13 @@ export default function EmailMarketingManager() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-700 mb-1">Asunto del email</label>
-                <input type="text" placeholder="Ej: ¡Nuevas ofertas de empleo para ti!" className="w-full p-2 border border-slate-200 rounded-lg text-sm" value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })} />
+                <input type="text" placeholder="Ej: ¡Nuevas ofertas de empleo para ti!" className={`w-full p-2 border rounded-lg text-sm ${errors.subject ? 'border-red-400' : 'border-slate-200'}`} value={form.subject} onChange={e => { setForm({ ...form, subject: e.target.value }); if (errors.subject) setErrors(prev => ({ ...prev, subject: '' })); }} />
+                {errors.subject && <p className="text-xs text-red-500 mt-1">{errors.subject}</p>}
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-700 mb-1">Contenido del email</label>
-                <textarea rows={3} placeholder="Escribe el cuerpo del email..." className="w-full p-2 border border-slate-200 rounded-lg text-sm resize-none" value={form.content} onChange={e => setForm({ ...form, content: e.target.value })} />
+                <textarea rows={3} placeholder="Escribe el cuerpo del email..." className={`w-full p-2 border rounded-lg text-sm resize-none ${errors.content ? 'border-red-400' : 'border-slate-200'}`} value={form.content} onChange={e => { setForm({ ...form, content: e.target.value }); if (errors.content) setErrors(prev => ({ ...prev, content: '' })); }} />
+                {errors.content && <p className="text-xs text-red-500 mt-1">{errors.content}</p>}
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-700 mb-1">Estado</label>

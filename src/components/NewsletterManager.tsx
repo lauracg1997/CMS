@@ -156,7 +156,7 @@ export default function NewsletterManager() {
                     <Users className="w-3 h-3 text-slate-400" />
                     {n.subscribers.toLocaleString()}
                   </td>
-                  <td className="px-6 py-4 text-slate-600">{n.last_sent_at || '—'}</td>
+                  <td className="px-6 py-4 text-slate-600">{n.last_sent_at ? new Date(n.last_sent_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}</td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">
                       {sendResult?.id === n.id && (
