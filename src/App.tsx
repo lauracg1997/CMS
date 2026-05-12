@@ -19,7 +19,7 @@ import {
   ArrowUpRight,
   Clock
 } from 'lucide-react';
-import { BarChart, Bar, XAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, CartesianGrid, Tooltip, ResponsiveContainer, YAxis } from 'recharts';
 import CandidatesManager from './components/CandidatesManager';
 import ResourceManager from './components/ResourceManager';
 import FormsManager from './components/FormsManager';
@@ -78,8 +78,14 @@ export default function App() {
 
   useEffect(() => {
     const onPopState = (e: PopStateEvent) => {
-      const view = (e.state?.view as string) ?? 'Inicio';
-      setActiveView(view);
+      if (!e.state?.view) {
+        localStorage.removeItem('cms_token');
+        localStorage.removeItem('cms_user');
+        setToken(null);
+        setAuthUser(null);
+        return;
+      }
+      setActiveView(e.state.view as string);
       setLeadsInitialStatus(e.state?.leadsStatus);
     };
     window.addEventListener('popstate', onPopState);
@@ -87,15 +93,9 @@ export default function App() {
   }, []);
 
   function handleNavigate(view: string, leadsStatus?: string) {
-    if (view === 'Inicio') {
-      window.history.replaceState({ view: 'Inicio' }, '');
-    } else {
-      // Always: Inicio below, section on top → back always lands on Inicio
-      window.history.replaceState({ view: 'Inicio' }, '');
-      window.history.pushState({ view, leadsStatus }, '');
-    }
+    window.history.pushState({ view, leadsStatus }, '');
     setActiveView(view);
-    setLeadsInitialStatus(view === 'Inicio' ? undefined : leadsStatus);
+    setLeadsInitialStatus(leadsStatus);
   }
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
@@ -300,31 +300,32 @@ export default function App() {
             </div>
 
             {/* Chart + Activity */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-gradient-to-br from-blue-50/50 to-white border border-blue-100/80 px-5 pt-5 pb-4 rounded-2xl shadow-sm">
+            <div className="grid grid-cols-3 gap-4">
+              <div className="col-span-2 bg-gradient-to-br from-blue-50/50 to-white border border-blue-100/80 px-5 pt-5 pb-4 rounded-2xl shadow-sm">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-sm font-semibold text-slate-950">Actividad Semanal</h3>
                   <div className="flex items-center gap-3 text-[11px] text-slate-500">
                     <span className="flex items-center gap-1.5">
-                      <span className="w-2.5 h-2.5 rounded-sm bg-blue-500 inline-block" />Leads nuevos
+                      <span className="w-2 h-2 rounded-full bg-blue-500 inline-block" />Leads nuevos
                     </span>
                     <span className="flex items-center gap-1.5">
-                      <span className="w-2.5 h-2.5 rounded-sm bg-slate-300 inline-block" />CVs recibidos
+                      <span className="w-2 h-2 rounded-full bg-slate-300 inline-block" />CVs recibidos
                     </span>
                   </div>
                 </div>
-                <div className="h-64">
+                <div className="h-52">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={chartData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }} barCategoryGap="40%" barGap={3}>
-                      <CartesianGrid vertical={false} stroke="#e2e8f0" strokeOpacity={0.7} />
+                    <LineChart data={chartData} margin={{ top: 4, right: 8, left: -28, bottom: 0 }}>
+                      <CartesianGrid vertical={false} stroke="#e2e8f0" strokeOpacity={0.5} />
                       <XAxis dataKey="name" fontSize={11} axisLine={false} tickLine={false} tick={{ fill: '#94a3b8' }} />
+                      <YAxis hide />
                       <Tooltip
-                        cursor={{ fill: 'rgba(59,130,246,0.05)', radius: 6 }}
+                        cursor={{ stroke: '#3b82f6', strokeWidth: 1, strokeOpacity: 0.2 }}
                         contentStyle={{ fontSize: 12, borderRadius: 10, border: '1px solid #dbeafe', boxShadow: '0 4px 16px rgba(0,0,0,0.07)', backgroundColor: 'white' }}
                       />
-                      <Bar dataKey="leads" name="Leads" fill="#3b82f6" radius={[4, 4, 0, 0]} maxBarSize={24} />
-                      <Bar dataKey="cvs" name="CVs" fill="#cbd5e1" radius={[4, 4, 0, 0]} maxBarSize={24} />
-                    </BarChart>
+                      <Line type="monotone" dataKey="leads" name="Leads" stroke="#3b82f6" strokeWidth={2} dot={false} activeDot={{ r: 4, fill: '#3b82f6' }} />
+                      <Line type="monotone" dataKey="cvs" name="CVs" stroke="#cbd5e1" strokeWidth={2} dot={false} activeDot={{ r: 4, fill: '#94a3b8' }} />
+                    </LineChart>
                   </ResponsiveContainer>
                 </div>
               </div>
