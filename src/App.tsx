@@ -19,7 +19,7 @@ import {
   ArrowUpRight,
   Clock
 } from 'lucide-react';
-import { AreaChart, Area, XAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import CandidatesManager from './components/CandidatesManager';
 import ResourceManager from './components/ResourceManager';
 import FormsManager from './components/FormsManager';
@@ -71,6 +71,26 @@ export default function App() {
   const [activeView, setActiveView] = useState('Inicio');
   const [leadsInitialStatus, setLeadsInitialStatus] = useState<string | undefined>(undefined);
   const [isCollapsed, setIsCollapsed] = useState(false);
+
+  useEffect(() => {
+    window.history.replaceState({ view: 'Inicio' }, '');
+  }, []);
+
+  useEffect(() => {
+    const onPopState = (e: PopStateEvent) => {
+      const view = (e.state?.view as string) ?? 'Inicio';
+      setActiveView(view);
+      setLeadsInitialStatus(e.state?.leadsStatus);
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
+
+  function handleNavigate(view: string, leadsStatus?: string) {
+    window.history.pushState({ view, leadsStatus }, '');
+    setActiveView(view);
+    setLeadsInitialStatus(leadsStatus);
+  }
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [totalLeads, setTotalLeads] = useState<number | null>(null);
@@ -151,7 +171,7 @@ export default function App() {
             return (
             <button
               key={item}
-              onClick={() => { setLeadsInitialStatus(undefined); setActiveView(item); }}
+              onClick={() => handleNavigate(item)}
               id={`nav-link-${idx}`}
               className={`w-full flex items-center px-3 py-1.5 text-sm font-medium rounded-lg transition-all duration-200 ${
                 activeView === item ? 'text-blue-600 bg-blue-50/50' : 'text-slate-600 hover:text-slate-950 hover:bg-slate-50'
@@ -244,7 +264,7 @@ export default function App() {
               </div>
 
               <button
-                onClick={() => { setLeadsInitialStatus('Convertido'); setActiveView('Leads'); }}
+                onClick={() => handleNavigate('Leads', 'Convertido')}
                 className="bg-gradient-to-br from-blue-50/70 to-white border border-blue-100 rounded-2xl p-5 text-left hover:border-blue-300 hover:shadow-md transition-all group"
               >
                 <div className="flex items-center justify-between mb-3">
@@ -261,7 +281,7 @@ export default function App() {
               </button>
 
               <button
-                onClick={() => setActiveView('Candidatos (CVs)')}
+                onClick={() => handleNavigate('Candidatos (CVs)')}
                 className="bg-gradient-to-br from-blue-50/70 to-white border border-blue-100 rounded-2xl p-5 text-left hover:border-blue-300 hover:shadow-md transition-all group"
               >
                 <div className="flex items-center justify-between mb-3">
@@ -275,28 +295,35 @@ export default function App() {
 
             {/* Chart + Activity */}
             <div className="grid grid-cols-2 gap-4">
-              <div className="bg-white border border-slate-100 px-5 pt-5 pb-4 rounded-2xl shadow-sm">
+              <div className="bg-gradient-to-br from-blue-50/50 to-white border border-blue-100/80 px-5 pt-5 pb-4 rounded-2xl shadow-sm">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-sm font-semibold text-slate-950">Actividad Semanal</h3>
-                  <div className="flex items-center gap-4 text-[11px] text-slate-400">
-                    <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-blue-600 inline-block" />Leads</span>
-                    <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-slate-300 inline-block" />Candidatos</span>
+                  <div className="flex items-center gap-3 text-[11px] text-slate-500">
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-sm bg-blue-500 inline-block" />Leads nuevos
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-sm bg-slate-300 inline-block" />CVs recibidos
+                    </span>
                   </div>
                 </div>
-                <div className="h-52">
+                <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={chartData} margin={{ top: 2, right: 0, left: -24, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                    <BarChart data={chartData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }} barCategoryGap="40%" barGap={3}>
+                      <CartesianGrid vertical={false} stroke="#e2e8f0" strokeOpacity={0.7} />
                       <XAxis dataKey="name" fontSize={11} axisLine={false} tickLine={false} tick={{ fill: '#94a3b8' }} />
-                      <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e2e8f0', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }} />
-                      <Area type="monotone" dataKey="leads" name="Leads" stroke="#2563eb" strokeWidth={2} fill="#dbeafe" fillOpacity={0.6} />
-                      <Area type="monotone" dataKey="cvs" name="Candidatos" stroke="#cbd5e1" strokeWidth={1.5} fill="#f1f5f9" fillOpacity={0.5} />
-                    </AreaChart>
+                      <Tooltip
+                        cursor={{ fill: 'rgba(59,130,246,0.05)', radius: 6 }}
+                        contentStyle={{ fontSize: 12, borderRadius: 10, border: '1px solid #dbeafe', boxShadow: '0 4px 16px rgba(0,0,0,0.07)', backgroundColor: 'white' }}
+                      />
+                      <Bar dataKey="leads" name="Leads" fill="#3b82f6" radius={[4, 4, 0, 0]} maxBarSize={24} />
+                      <Bar dataKey="cvs" name="CVs" fill="#cbd5e1" radius={[4, 4, 0, 0]} maxBarSize={24} />
+                    </BarChart>
                   </ResponsiveContainer>
                 </div>
               </div>
 
-              <div className="bg-white border border-slate-100 p-5 rounded-2xl shadow-sm overflow-y-auto">
+              <div className="bg-gradient-to-br from-blue-50/50 to-white border border-blue-100/80 p-5 rounded-2xl shadow-sm overflow-y-auto">
                 <h3 className="text-sm font-semibold text-slate-950 mb-3">Actividad Reciente</h3>
                 <div className="space-y-2.5">
                   {activityLogs.length === 0 ? (
@@ -312,10 +339,10 @@ export default function App() {
             </div>
 
             {/* Candidates table */}
-            <div className="bg-white border border-slate-100 p-5 rounded-2xl shadow-sm">
+            <div className="bg-gradient-to-br from-blue-50/50 to-white border border-blue-100/80 p-5 rounded-2xl shadow-sm">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-sm font-semibold text-slate-950">Candidatos Recientes</h3>
-                <button onClick={() => setActiveView('Candidatos (CVs)')} className="text-xs text-blue-600 hover:underline flex items-center gap-1">Ver todos <ArrowUpRight className="w-3 h-3" /></button>
+                <button onClick={() => handleNavigate('Candidatos (CVs)')} className="text-xs text-blue-600 hover:underline flex items-center gap-1">Ver todos <ArrowUpRight className="w-3 h-3" /></button>
               </div>
               {recentCandidates.length === 0 ? (
                 <p className="text-sm text-slate-400">Sin candidatos aún.</p>
