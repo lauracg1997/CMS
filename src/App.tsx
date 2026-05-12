@@ -73,13 +73,15 @@ export default function App() {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [totalLeads, setTotalLeads] = useState<number | null>(null);
+  const [weekLeads, setWeekLeads] = useState<number | null>(null);
+  const [convertedLeads, setConvertedLeads] = useState<number | null>(null);
   const [totalCandidates, setTotalCandidates] = useState<number | null>(null);
   const [recentCandidates, setRecentCandidates] = useState<{ id: number; name: string; position: string; status: string }[]>([]);
   const [activityLogs, setActivityLogs] = useState<{ id: number; description: string; created_at: string }[]>([]);
   const [chartData, setChartData] = useState<{ name: string; leads: number; cvs: number }[]>(buildChartData([], []));
 
   useEffect(() => {
-    if (!token) return;
+    if (!token || activeView !== 'Inicio') return;
     Promise.all([
       fetch('/api/leads').then(r => r.json()).catch(() => []),
       fetch('/api/candidates').then(r => r.json()).catch(() => []),
@@ -87,12 +89,15 @@ export default function App() {
       const leads = Array.isArray(leadsData) ? leadsData : [];
       const candidates = Array.isArray(candidatesData) ? candidatesData : [];
       setTotalLeads(leads.length);
+      const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 7);
+      setWeekLeads(leads.filter((l: any) => l.created_at && new Date(l.created_at) >= cutoff).length);
+      setConvertedLeads(leads.filter((l: any) => l.status === 'Convertido').length);
       setTotalCandidates(candidates.length);
       setRecentCandidates(candidates.slice(0, 5));
       setChartData(buildChartData(leads, candidates));
     });
     fetch('/api/activity-logs').then(r => r.json()).then(d => setActivityLogs(Array.isArray(d) ? d : [])).catch(() => setActivityLogs([]));
-  }, [token]);
+  }, [token, activeView]);
 
   function handleLogin(t: string, user: AuthUser) {
     localStorage.setItem('cms_token', t);
@@ -210,23 +215,36 @@ export default function App() {
             <div className="grid grid-cols-4 gap-6 flex-1">
               
               {/* Stat Cards */}
-              <div className="col-span-1 bg-blue-50 border border-blue-100 p-5 rounded-2xl shadow-sm flex flex-col justify-between">
+              <button
+                onClick={() => setActiveView('Leads')}
+                className="col-span-1 bg-blue-50 border border-blue-100 p-4 rounded-2xl shadow-sm flex flex-col justify-between text-left hover:border-blue-300 hover:shadow-md transition-all group"
+              >
                 <div className="flex justify-between items-start">
-                    <p className="text-[10px] font-bold text-blue-500 uppercase tracking-wider">Leads Totales</p>
-                    <ArrowUpRight className="w-4 h-4 text-green-500" />
+                  <p className="text-xs font-semibold text-blue-500 uppercase tracking-wider">Leads Totales</p>
+                  <ArrowUpRight className="w-4 h-4 text-green-500 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                 </div>
-                <p className="text-3xl font-bold text-slate-950 mt-2">{totalLeads ?? '—'}</p>
-              </div>
-              <div className="col-span-1 bg-blue-50 border border-blue-100 p-5 rounded-2xl shadow-sm flex flex-col justify-between">
+                <div>
+                  <p className="text-3xl font-bold text-slate-950 mt-2 leading-none">{totalLeads ?? '—'}</p>
+                  {weekLeads !== null && (
+                    <p className="text-xs text-blue-500 mt-2 font-medium">+{weekLeads} esta semana</p>
+                  )}
+                </div>
+              </button>
+              <div className="col-span-1 bg-blue-50 border border-blue-100 p-4 rounded-2xl shadow-sm flex flex-col justify-between">
                 <div className="flex justify-between items-start">
-                    <p className="text-[10px] font-bold text-blue-500 uppercase tracking-wider">Tasa Conversión</p>
-                    <ArrowUpRight className="w-4 h-4 text-green-500" />
+                  <p className="text-xs font-semibold text-blue-500 uppercase tracking-wider">Tasa Conversión</p>
+                  <ArrowUpRight className="w-4 h-4 text-green-500" />
                 </div>
-                <p className="text-3xl font-bold text-slate-950 mt-2">
-                  {totalLeads && totalCandidates != null && totalLeads > 0
-                    ? `${((totalCandidates / totalLeads) * 100).toFixed(1)}%`
-                    : '—'}
-                </p>
+                <div>
+                  <p className="text-3xl font-bold text-slate-950 mt-2 leading-none">
+                    {totalLeads != null && convertedLeads != null && totalLeads > 0
+                      ? `${((convertedLeads / totalLeads) * 100).toFixed(1)}%`
+                      : '—'}
+                  </p>
+                  {convertedLeads !== null && (
+                    <p className="text-xs text-blue-500 mt-2 font-medium">{convertedLeads} leads convertidos</p>
+                  )}
+                </div>
               </div>
               <div className="col-span-2 bg-blue-50 border border-blue-100 p-6 rounded-2xl shadow-sm">
                 <h3 className="text-sm font-semibold text-slate-950 mb-6">Actividad Semanal</h3>
