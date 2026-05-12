@@ -114,10 +114,35 @@ export default function SettingsManager() {
     setEmailForm(null);
   };
 
-  const testEmailConnection = () => {
-    const allFilled = !!(emailForm.smtpHost && emailForm.smtpPort && emailForm.smtpUser && emailForm.smtpPass && emailForm.fromEmail);
-    setTestResult(allFilled ? 'success' : 'error');
-    setEmailForm({ ...emailForm, status: allFilled ? 'connected' : 'error' });
+  const testEmailConnection = async () => {
+    setIsTestingEmail(true);
+    setTestResult(null);
+    try {
+      const res = await fetch('/api/settings/test-smtp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({
+          smtpHost:  emailForm.smtpHost,
+          smtpPort:  emailForm.smtpPort,
+          smtpUser:  emailForm.smtpUser,
+          smtpPass:  emailForm.smtpPass,
+          fromEmail: emailForm.fromEmail,
+          fromName:  emailForm.fromName,
+        }),
+      });
+      if (res.ok) {
+        setTestResult('success');
+        setEmailForm({ ...emailForm, status: 'connected' });
+      } else {
+        setTestResult('error');
+        setEmailForm({ ...emailForm, status: 'error' });
+      }
+    } catch {
+      setTestResult('error');
+      setEmailForm({ ...emailForm, status: 'error' });
+    } finally {
+      setIsTestingEmail(false);
+    }
   };
 
   return (
