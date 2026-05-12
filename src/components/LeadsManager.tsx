@@ -23,7 +23,9 @@ const STATUS_COLORS: Record<string, string> = {
   Convertido: 'bg-emerald-50 text-emerald-700',
 };
 
-export default function LeadsManager() {
+type Props = { initialStatus?: string };
+
+export default function LeadsManager({ initialStatus }: Props) {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -32,6 +34,7 @@ export default function LeadsManager() {
   const [errors, setErrors] = useState(emptyErrors);
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>(initialStatus ?? '');
 
   async function fetchLeads() {
     try {
@@ -136,11 +139,21 @@ export default function LeadsManager() {
         </button>
       </header>
 
-      <div className="p-6 border-b border-slate-100">
-        <div className="relative">
+      <div className="p-6 border-b border-slate-100 flex gap-3">
+        <div className="relative flex-1">
           <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
           <input type="text" placeholder="Buscar por nombre o email..." value={search} onChange={e => setSearch(e.target.value)} className="w-full pl-10 pr-4 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20" />
         </div>
+        <select
+          value={statusFilter}
+          onChange={e => setStatusFilter(e.target.value)}
+          className="py-2 px-3 text-sm border border-slate-200 rounded-lg bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+        >
+          <option value="">Todos los estados</option>
+          <option value="Nuevo">Nuevo</option>
+          <option value="Contactado">Contactado</option>
+          <option value="Convertido">Convertido</option>
+        </select>
       </div>
 
       <div className="flex-1 overflow-y-auto">
@@ -158,7 +171,10 @@ export default function LeadsManager() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {leads.filter(l => !search || l.name.toLowerCase().includes(search.toLowerCase()) || l.email.toLowerCase().includes(search.toLowerCase())).map((l) => (
+              {leads.filter(l =>
+                (!statusFilter || l.status === statusFilter) &&
+                (!search || l.name.toLowerCase().includes(search.toLowerCase()) || l.email.toLowerCase().includes(search.toLowerCase()))
+              ).map((l) => (
                 <tr key={l.id} className="hover:bg-slate-50/50 transition-colors">
                   <td className="px-6 py-4 text-slate-950 font-semibold">{l.name}</td>
                   <td className="px-6 py-4 text-slate-600">{l.email}</td>

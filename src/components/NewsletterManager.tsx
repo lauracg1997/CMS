@@ -1,4 +1,4 @@
-import { Edit2, Trash2, Plus, Users, X, Send } from 'lucide-react';
+import { Edit2, Trash2, Plus, X, Send } from 'lucide-react';
 import RichTextEditor from './RichTextEditor';
 import { useState, useEffect } from 'react';
 import { Portal } from './Portal';
@@ -139,7 +139,6 @@ export default function NewsletterManager() {
               <tr>
                 <th className="px-6 py-4 font-semibold">Nombre</th>
                 <th className="px-6 py-4 font-semibold">Estado</th>
-                <th className="px-6 py-4 font-semibold">Suscriptores</th>
                 <th className="px-6 py-4 font-semibold">Último Envío</th>
                 <th className="px-6 py-4 font-semibold text-right">Acciones</th>
               </tr>
@@ -152,10 +151,6 @@ export default function NewsletterManager() {
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                       n.status === 'Enviado' ? 'bg-blue-100 text-blue-700' : 'bg-yellow-100 text-yellow-700'
                     }`}>{n.status || 'Borrador'}</span>
-                  </td>
-                  <td className="px-6 py-4 text-slate-600 flex items-center gap-1.5">
-                    <Users className="w-3 h-3 text-slate-400" />
-                    {n.subscribers.toLocaleString()}
                   </td>
                   <td className="px-6 py-4 text-slate-600">{n.last_sent_at ? new Date(n.last_sent_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}</td>
                   <td className="px-6 py-4 text-right">
