@@ -1,4 +1,4 @@
-import { Edit2, Trash2, Plus, X, Send } from 'lucide-react';
+import { Edit2, Trash2, Plus, X, Send, RefreshCw } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import NewsletterManager from './NewsletterManager';
 import { Portal } from './Portal';
@@ -196,11 +196,13 @@ export default function EmailMarketingManager() {
                         {sendResult?.id === c.id && (
                           <span className={`text-xs mr-2 ${sendResult.ok ? 'text-green-600' : 'text-red-500'}`}>{sendResult.msg}</span>
                         )}
-                        {c.status !== 'Enviada' && (
-                          <button onClick={() => handleSendCampaign(c)} title="Enviar campaña" className="text-slate-400 hover:text-blue-600 transition-colors">
-                            <Send className="w-4 h-4" />
-                          </button>
-                        )}
+                        <button
+                          onClick={() => handleSendCampaign(c)}
+                          title={c.status === 'Enviada' ? 'Reenviar campaña' : 'Enviar campaña'}
+                          className="text-slate-400 hover:text-blue-600 transition-colors"
+                        >
+                          {c.status === 'Enviada' ? <RefreshCw className="w-4 h-4" /> : <Send className="w-4 h-4" />}
+                        </button>
                         <button onClick={() => openEdit(c)} className="text-slate-400 hover:text-blue-600 transition-colors">
                           <Edit2 className="w-4 h-4" />
                         </button>
@@ -221,8 +223,8 @@ export default function EmailMarketingManager() {
 
       {confirmModal && (
         <ConfirmModal
-          message={confirmModal.action === 'delete' ? `¿Eliminar campaña "${confirmModal.item.name}"?` : `¿Enviar campaña "${confirmModal.item.name}" a todos los leads?`}
-          confirmLabel={confirmModal.action === 'delete' ? 'Eliminar' : 'Enviar'}
+          message={confirmModal.action === 'delete' ? `¿Eliminar campaña "${confirmModal.item.name}"?` : confirmModal.item.status === 'Enviada' ? `¿Reenviar campaña "${confirmModal.item.name}" a todos los leads?` : `¿Enviar campaña "${confirmModal.item.name}" a todos los leads?`}
+          confirmLabel={confirmModal.action === 'delete' ? 'Eliminar' : confirmModal.item.status === 'Enviada' ? 'Reenviar' : 'Enviar'}
           danger={confirmModal.action === 'delete'}
           onConfirm={executeConfirm}
           onCancel={() => setConfirmModal(null)}

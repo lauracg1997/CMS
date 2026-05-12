@@ -1,4 +1,4 @@
-import { Edit2, Trash2, Plus, X, Send } from 'lucide-react';
+import { Edit2, Trash2, Plus, X, Send, RefreshCw } from 'lucide-react';
 import RichTextEditor from './RichTextEditor';
 import { useState, useEffect } from 'react';
 import { Portal } from './Portal';
@@ -158,11 +158,13 @@ export default function NewsletterManager() {
                       {sendResult?.id === n.id && (
                         <span className={`text-xs mr-1 ${sendResult.ok ? 'text-green-600' : 'text-red-500'}`}>{sendResult.msg}</span>
                       )}
-                      {n.status !== 'Enviado' && (
-                        <button onClick={() => handleSend(n)} title="Enviar newsletter" className="text-slate-400 hover:text-blue-600 transition-colors">
-                          <Send className="w-4 h-4" />
-                        </button>
-                      )}
+                      <button
+                        onClick={() => handleSend(n)}
+                        title={n.status === 'Enviado' ? 'Reenviar newsletter' : 'Enviar newsletter'}
+                        className="text-slate-400 hover:text-blue-600 transition-colors"
+                      >
+                        {n.status === 'Enviado' ? <RefreshCw className="w-4 h-4" /> : <Send className="w-4 h-4" />}
+                      </button>
                       <button onClick={() => openEdit(n)} className="text-slate-400 hover:text-blue-600 transition-colors">
                         <Edit2 className="w-4 h-4" />
                       </button>
@@ -180,8 +182,8 @@ export default function NewsletterManager() {
 
       {confirm && (
         <ConfirmModal
-          message={confirm.action === 'delete' ? `¿Eliminar "${confirm.item.name}"?` : `¿Enviar newsletter "${confirm.item.name}" a todos los leads?`}
-          confirmLabel={confirm.action === 'delete' ? 'Eliminar' : 'Enviar'}
+          message={confirm.action === 'delete' ? `¿Eliminar "${confirm.item.name}"?` : confirm.item.status === 'Enviado' ? `¿Reenviar newsletter "${confirm.item.name}" a todos los leads?` : `¿Enviar newsletter "${confirm.item.name}" a todos los leads?`}
+          confirmLabel={confirm.action === 'delete' ? 'Eliminar' : confirm.item.status === 'Enviado' ? 'Reenviar' : 'Enviar'}
           danger={confirm.action === 'delete'}
           onConfirm={executeConfirm}
           onCancel={() => setConfirm(null)}
