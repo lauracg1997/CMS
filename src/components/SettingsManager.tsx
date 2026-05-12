@@ -106,13 +106,38 @@ export default function SettingsManager() {
     setTestResult(null);
   };
 
-  const applyEmailForm = () => {
-    setEmailAccounts(prev => {
-      const exists = prev.find(a => a.id === emailForm.id);
-      if (exists) return prev.map(a => a.id === emailForm.id ? emailForm : a);
-      return [...prev, emailForm];
-    });
-    setEmailForm(null);
+  const saveEmailAccount = async () => {
+    const newAccounts = emailAccounts.find(a => a.id === emailForm.id)
+      ? emailAccounts.map(a => a.id === emailForm.id ? emailForm : a)
+      : [...emailAccounts, emailForm];
+
+    setIsSaving(true);
+    setSaveError('');
+    try {
+      const res = await fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({
+          web_settings: JSON.stringify(webSettings),
+          email_accounts: JSON.stringify(newAccounts),
+          resource_settings: JSON.stringify(resourceSettings),
+          url_settings: JSON.stringify(urlSettings),
+        }),
+      });
+      if (!res.ok) {
+        const d = await res.json();
+        setSaveError(d.message || 'Error al guardar.');
+        return;
+      }
+      setEmailAccounts(newAccounts);
+      setEmailForm(null);
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
+    } catch {
+      setSaveError('No se pudo conectar al servidor.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const testEmailConnection = async () => {
@@ -392,10 +417,11 @@ export default function SettingsManager() {
                       </div>
 
                       <button
-                        onClick={applyEmailForm}
-                        className="flex items-center px-6 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition"
+                        onClick={saveEmailAccount}
+                        disabled={isSaving}
+                        className="flex items-center px-6 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 transition"
                       >
-                        Aplicar Configuración
+                        {isSaving ? 'Guardando...' : 'Guardar cuenta'}
                       </button>
                     </div>
                   </>
