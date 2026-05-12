@@ -1,5 +1,5 @@
 
-import { Globe, Mail, Folder, Link2, Save, Key, Server, Hash, Webhook, CheckCircle2, Plus, Edit2, Trash2, ChevronLeft, Loader2, AlertCircle } from 'lucide-react';
+import { Globe, Mail, Folder, Link2, Save, Key, Server, Hash, Webhook, CheckCircle2, Plus, Edit2, Trash2, ChevronLeft, Loader2, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 const DEFAULT_WEB = {
@@ -38,6 +38,7 @@ export default function SettingsManager() {
   const [emailForm, setEmailForm] = useState<any>(null);
   const [isTestingEmail, setIsTestingEmail] = useState(false);
   const [testResult, setTestResult] = useState<'success' | 'error' | null>(null);
+  const [showSmtpPass, setShowSmtpPass] = useState(false);
   const [resourceSettings, setResourceSettings] = useState(DEFAULT_RESOURCES);
   const [urlSettings, setUrlSettings] = useState(DEFAULT_URLS);
 
@@ -348,7 +349,12 @@ export default function SettingsManager() {
                         </div>
                         <div>
                           <label className="block text-xs font-semibold text-slate-700 mb-1">Contraseña SMTP</label>
-                          <input type="password" placeholder="••••••••" className="w-full p-2 border border-slate-200 rounded-lg text-sm font-mono focus:ring-2 focus:ring-blue-100 outline-none" value={emailForm.smtpPass} onChange={e => setEmailForm({...emailForm, smtpPass: e.target.value})} />
+                          <div className="relative">
+                            <input type={showSmtpPass ? 'text' : 'password'} placeholder="••••••••" className="w-full p-2 pr-9 border border-slate-200 rounded-lg text-sm font-mono focus:ring-2 focus:ring-blue-100 outline-none" value={emailForm.smtpPass} onChange={e => setEmailForm({...emailForm, smtpPass: e.target.value})} />
+                            <button type="button" onClick={() => setShowSmtpPass(v => !v)} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition">
+                              {showSmtpPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
