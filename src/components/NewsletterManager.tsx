@@ -1,4 +1,5 @@
 import { Edit2, Trash2, Plus, Users, X, Send } from 'lucide-react';
+import RichTextEditor from './RichTextEditor';
 import { useState, useEffect } from 'react';
 import { Portal } from './Portal';
 import ConfirmModal from './ConfirmModal';
@@ -212,7 +213,12 @@ export default function NewsletterManager() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-700 mb-1">Contenido del email</label>
-                <textarea rows={3} placeholder="Escribe el cuerpo del newsletter..." className={`w-full p-2 border rounded-lg text-sm resize-none ${errors.content ? 'border-red-400' : 'border-slate-200'}`} value={form.content} onChange={e => { setForm({ ...form, content: e.target.value }); if (errors.content) setErrors(p => ({ ...p, content: '' })); }} />
+                <RichTextEditor
+                  value={form.content}
+                  onChange={html => { setForm(p => ({ ...p, content: html })); if (errors.content) setErrors(p => ({ ...p, content: '' })); }}
+                  placeholder="Escribe el cuerpo del newsletter..."
+                  error={!!errors.content}
+                />
                 {errors.content && <p className="text-xs text-red-500 mt-1">{errors.content}</p>}
               </div>
             </div>
