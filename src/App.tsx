@@ -87,9 +87,15 @@ export default function App() {
   }, []);
 
   function handleNavigate(view: string, leadsStatus?: string) {
-    window.history.pushState({ view, leadsStatus }, '');
+    if (view === 'Inicio') {
+      window.history.replaceState({ view: 'Inicio' }, '');
+    } else {
+      // Always: Inicio below, section on top → back always lands on Inicio
+      window.history.replaceState({ view: 'Inicio' }, '');
+      window.history.pushState({ view, leadsStatus }, '');
+    }
     setActiveView(view);
-    setLeadsInitialStatus(leadsStatus);
+    setLeadsInitialStatus(view === 'Inicio' ? undefined : leadsStatus);
   }
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
