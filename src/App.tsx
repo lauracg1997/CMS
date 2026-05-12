@@ -94,13 +94,7 @@ export default function App() {
   }, []);
 
   function handleNavigate(view: string, leadsStatus?: string) {
-    if (view === 'Inicio') {
-      window.history.replaceState({ view: 'Inicio' }, '');
-    } else if (activeView === 'Inicio') {
-      window.history.pushState({ view, leadsStatus }, '');
-    } else {
-      window.history.replaceState({ view, leadsStatus }, '');
-    }
+    window.history.pushState({ view, leadsStatus }, '');
     setActiveView(view);
     setLeadsInitialStatus(view === 'Inicio' ? undefined : leadsStatus);
   }
@@ -249,7 +243,7 @@ export default function App() {
             {/* Stat cards */}
             <div className="grid grid-cols-3 gap-4">
               <div
-                onClick={() => { setLeadsInitialStatus(undefined); setActiveView('Leads'); }}
+                onClick={() => handleNavigate('Leads')}
                 className="bg-gradient-to-br from-blue-50/70 to-white border border-blue-100 rounded-2xl p-5 cursor-pointer hover:border-blue-300 hover:shadow-md transition-all group"
               >
                 <div className="flex items-center justify-between mb-3">
