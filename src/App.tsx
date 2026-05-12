@@ -73,7 +73,8 @@ export default function App() {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   useEffect(() => {
-    window.history.replaceState({ view: 'Inicio' }, '');
+    window.history.replaceState(null, '');
+    window.history.pushState({ view: 'Inicio' }, '');
   }, []);
 
   useEffect(() => {
@@ -93,9 +94,15 @@ export default function App() {
   }, []);
 
   function handleNavigate(view: string, leadsStatus?: string) {
-    window.history.pushState({ view, leadsStatus }, '');
+    if (view === 'Inicio') {
+      window.history.replaceState({ view: 'Inicio' }, '');
+    } else if (activeView === 'Inicio') {
+      window.history.pushState({ view, leadsStatus }, '');
+    } else {
+      window.history.replaceState({ view, leadsStatus }, '');
+    }
     setActiveView(view);
-    setLeadsInitialStatus(leadsStatus);
+    setLeadsInitialStatus(view === 'Inicio' ? undefined : leadsStatus);
   }
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
